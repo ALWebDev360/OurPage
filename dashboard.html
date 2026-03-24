@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard — Elevated Solutions</title>
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <style>
+    :root { --primary: #1e3c72; --accent: #ff5959; --bg: #f4f6fb; --card: #fff; --text: #2a2a2a; --muted: #6c757d; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: var(--text); }
+
+    /* Sidebar */
+    #dashboard-app { display: none; }
+    .sidebar { position: fixed; top: 0; left: 0; width: 250px; height: 100vh; background: var(--primary); z-index: 100; }
+    .sidebar-brand { padding: 25px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-brand h4 { color: #fff; margin: 0; font-weight: 700; font-size: 18px; }
+    .sidebar-brand span { color: var(--accent); }
+    .sidebar-brand small { color: rgba(255,255,255,0.5); font-size: 12px; display: block; margin-top: 4px; }
+    .sidebar-nav { list-style: none; padding: 15px 0; margin: 0; }
+    .sidebar-nav li a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+    .sidebar-nav li a:hover, .sidebar-nav li a.active { background: rgba(255,255,255,0.1); color: #fff; }
+    .sidebar-nav li a i { width: 20px; text-align: center; }
+    .sidebar-bottom { position: absolute; bottom: 0; width: 100%; padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-bottom a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 13px; display: block; padding: 4px 0; }
+    .sidebar-bottom a:hover { color: #fff; }
+
+    /* Main content */
+    .main { margin-left: 250px; padding: 30px; min-height: 100vh; }
+    .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 10px; }
+    .main-header h2 { font-weight: 700; font-size: 24px; margin: 0; }
+    .main-header .user-name { color: var(--muted); font-size: 14px; }
+
+    /* Stat cards */
+    .stat-card { background: var(--card); border-radius: 16px; padding: 25px; box-shadow: 0 2px 20px rgba(0,0,0,0.04); text-align: center; }
+    .stat-card .stat-value { font-size: 36px; font-weight: 700; color: var(--primary); }
+    .stat-card .stat-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; }
+    .stat-card.accent .stat-value { color: var(--accent); }
+    .stat-card.green .stat-value { color: #28a745; }
+
+    /* Cards */
+    .panel-card { background: var(--card); border-radius: 16px; padding: 25px; box-shadow: 0 2px 20px rgba(0,0,0,0.04); margin-bottom: 20px; }
+    .panel-card h5 { font-weight: 700; margin-bottom: 20px; color: var(--primary); }
+
+    /* View sections */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* Table */
+    .table th { font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; border-bottom: 2px solid #eee; font-weight: 600; }
+    .table td { vertical-align: middle; font-size: 14px; }
+
+    /* Consultation card */
+    .consult-card { background: #f7f9fc; border-radius: 12px; padding: 18px 22px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .consult-card .consult-date { font-weight: 700; color: var(--primary); font-size: 15px; }
+    .consult-card .consult-type { font-size: 13px; color: var(--muted); }
+    .consult-card .consult-notes { font-size: 13px; color: #888; margin-top: 4px; }
+
+    /* Status badges */
+    .badge-status { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #fff; }
+    .badge-scheduled { background: #28a745; }
+    .badge-completed { background: var(--muted); }
+    .badge-cancelled { background: #dc3545; }
+
+    /* Form */
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,60,114,0.1); }
+    .btn-primary { background: var(--primary); border-color: var(--primary); border-radius: 10px; }
+    .btn-primary:hover { background: #2a5298; border-color: #2a5298; }
+    .btn-accent { background: var(--accent); border: none; color: #fff; border-radius: 10px; padding: 10px 25px; font-weight: 600; }
+    .btn-accent:hover { background: #e04444; color: #fff; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-state i { font-size: 48px; margin-bottom: 15px; opacity: 0.3; }
+    .empty-state p { font-size: 15px; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; }
+      .sidebar-brand h4, .sidebar-brand small, .sidebar-nav li a span, .sidebar-bottom span { display: none; }
+      .sidebar-nav li a { justify-content: center; padding: 15px; }
+      .main { margin-left: 60px; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ No-Auth Redirect ═══ -->
+  <div id="no-auth-screen" style="display:none;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3c72,#2a5298);">
+    <div style="background:#fff;border-radius:20px;padding:40px;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <h3 style="color:#1e3c72;font-weight:700;margin-bottom:10px;">Sign In Required</h3>
+      <p style="color:#666;margin-bottom:25px;">Please log in on the main site to access your dashboard.</p>
+      <a href="index.html" class="btn btn-primary" style="padding:10px 30px;border-radius:10px;">Go to Homepage</a>
+    </div>
+  </div>
+
+  <!-- ═══ Dashboard App ═══ -->
+  <div id="dashboard-app">
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <h4>Elevated<span>Solutions</span></h4>
+        <small>Client Dashboard</small>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="#" data-view="overview" class="active"><i class="fa fa-home"></i> <span>Overview</span></a></li>
+        <li><a href="#" data-view="consultations"><i class="fa fa-calendar"></i> <span>Consultations</span></a></li>
+        <li id="nav-payments" style="display:none;"><a href="#" data-view="payments"><i class="fa fa-credit-card"></i> <span>Payments</span></a></li>
+        <li><a href="#" data-view="profile"><i class="fa fa-user"></i> <span>My Profile</span></a></li>
+      </ul>
+      <div class="sidebar-bottom">
+        <a href="index.html"><i class="fa fa-arrow-left"></i> <span>Back to Site</span></a>
+        <a href="#" id="dash-logout" style="margin-top:8px;"><i class="fa fa-sign-out"></i> <span>Log Out</span></a>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="main-header">
+        <h2 id="page-title">Overview</h2>
+        <div class="user-name">Welcome, <strong id="user-display-name"></strong></div>
+      </div>
+
+      <!-- ── Overview View ── -->
+      <div id="view-overview" class="view-section active">
+        <div class="row g-4 mb-4">
+          <div class="col-md-3 col-6">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-total">0</div>
+              <div class="stat-label">Total Bookings</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-card green">
+              <div class="stat-value" id="stat-scheduled">0</div>
+              <div class="stat-label">Upcoming</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-completed">0</div>
+              <div class="stat-label">Completed</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-card accent">
+              <div class="stat-value" id="stat-cancelled">0</div>
+              <div class="stat-label">Cancelled</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-lg-7">
+            <div class="panel-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 style="margin:0;">Upcoming Consultations</h5>
+                <button class="btn btn-accent btn-sm" style="font-size:13px;" onclick="openBookModal()">Book New</button>
+              </div>
+              <div id="upcoming-list"></div>
+              <div id="upcoming-empty" class="empty-state" style="display:none;">
+                <i class="fa fa-calendar-o"></i>
+                <p>No upcoming consultations</p>
+                <button class="btn btn-accent btn-sm" style="margin-top:10px;" onclick="openBookModal()">Schedule One Now</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="panel-card">
+              <h5>Quick Actions</h5>
+              <div class="d-grid gap-2">
+                <button class="btn btn-primary" onclick="openBookModal()"><i class="fa fa-plus"></i> Book New Consultation</button>
+                <button class="btn btn-outline-primary" onclick="switchView('profile')"><i class="fa fa-user"></i> Edit Profile</button>
+                <button class="btn btn-outline-primary" onclick="switchView('consultations')"><i class="fa fa-list"></i> View All Consultations</button>
+              </div>
+            </div>
+            <div class="panel-card">
+              <h5>Account Info</h5>
+              <table class="table table-borderless mb-0" style="font-size:14px;">
+                <tr><td style="color:var(--muted);width:100px;">Name</td><td id="info-name" style="font-weight:600;"></td></tr>
+                <tr><td style="color:var(--muted);">Email</td><td id="info-email"></td></tr>
+                <tr><td style="color:var(--muted);">Company</td><td id="info-company"></td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Consultations View ── -->
+      <div id="view-consultations" class="view-section">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="d-flex gap-2 flex-wrap">
+            <select class="form-select" id="filter-status" style="border-radius:10px;width:auto;font-size:14px;">
+              <option value="">All Status</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <button class="btn btn-accent btn-sm" onclick="openBookModal()">Book New</button>
+        </div>
+        <div class="panel-card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Date & Time</th><th>Type</th><th>Notes</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="all-consults-tbody"></tbody>
+            </table>
+          </div>
+          <div id="consults-empty" class="empty-state" style="display:none;">
+            <i class="fa fa-calendar-o"></i>
+            <p>No consultations yet</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Profile View ── -->
+      <div id="view-profile" class="view-section">
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="panel-card">
+              <h5>Edit Profile</h5>
+              <div id="profile-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+              <form id="profile-form">
+                <div class="mb-3">
+                  <label class="form-label" style="font-weight:600;font-size:14px;">Full Name</label>
+                  <input type="text" class="form-control" id="prof-name" required style="border-radius:10px;padding:10px 15px;" maxlength="100">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" style="font-weight:600;font-size:14px;">Email</label>
+                  <input type="email" class="form-control" id="prof-email" disabled style="border-radius:10px;padding:10px 15px;background:#f7f9fc;">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" style="font-weight:600;font-size:14px;">Company / Organization</label>
+                  <input type="text" class="form-control" id="prof-company" style="border-radius:10px;padding:10px 15px;" maxlength="100" placeholder="Optional">
+                </div>
+                <button type="submit" class="btn btn-primary" id="save-profile-btn">Save Changes</button>
+              </form>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="panel-card">
+              <h5>Change Password</h5>
+              <div id="password-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+              <form id="password-form">
+                <div class="mb-3">
+                  <label class="form-label" style="font-weight:600;font-size:14px;">Current Password</label>
+                  <input type="password" class="form-control" id="pw-current" required style="border-radius:10px;padding:10px 15px;">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" style="font-weight:600;font-size:14px;">New Password</label>
+                  <input type="password" class="form-control" id="pw-new" required minlength="8" style="border-radius:10px;padding:10px 15px;">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" style="font-weight:600;font-size:14px;">Confirm New Password</label>
+                  <input type="password" class="form-control" id="pw-confirm" required minlength="8" style="border-radius:10px;padding:10px 15px;">
+                </div>
+                <button type="submit" class="btn btn-primary" id="change-pw-btn">Change Password</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Payments View ── -->
+      <div id="view-payments" class="view-section">
+        <div class="row g-4">
+          <div class="col-lg-8">
+            <!-- One-Time Project Fee -->
+            <div class="panel-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 style="margin:0;">One-Time Project Fee</h5>
+                  <p style="margin:4px 0 0;color:var(--muted);font-size:14px;">Initial setup, design, and development</p>
+                </div>
+                <span id="pay-onetime-badge" class="badge-status" style="background:#f0ad4e;">Pending</span>
+              </div>
+              <div id="pay-onetime-section">
+                <div style="background:#f7f9fc;border-radius:12px;padding:20px;margin-bottom:20px;">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <p style="font-size:13px;color:var(--muted);margin:0;">Amount Due</p>
+                      <h3 id="pay-onetime-amount" style="color:var(--primary);margin:5px 0 0;font-weight:800;"></h3>
+                    </div>
+                    <button class="btn btn-accent" id="pay-onetime-btn" onclick="payOneTime()" style="font-size:15px;padding:12px 30px;">
+                      <i class="fa fa-lock" style="margin-right:6px;"></i>Pay Now
+                    </button>
+                  </div>
+                </div>
+                <div style="font-size:13px;color:var(--muted);">
+                  <i class="fa fa-shield" style="margin-right:5px;"></i> Secure payment processed via <strong>Stripe</strong> &mdash; your card details never touch our servers
+                </div>
+              </div>
+              <div id="pay-onetime-paid" style="display:none;text-align:center;padding:20px;">
+                <i class="fa fa-check-circle" style="font-size:48px;color:#28a745;margin-bottom:10px;"></i>
+                <h5 style="color:#28a745;font-weight:700;">Payment Complete</h5>
+                <p style="color:var(--muted);font-size:14px;">One-time project fee paid on <strong id="pay-onetime-date"></strong></p>
+              </div>
+            </div>
+
+            <!-- Monthly Upkeep -->
+            <div class="panel-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 style="margin:0;">Monthly Upkeep</h5>
+                  <p style="margin:4px 0 0;color:var(--muted);font-size:14px;">Hosting, maintenance, updates &amp; support</p>
+                </div>
+                <span id="pay-monthly-badge" class="badge-status" style="background:var(--muted);">Not Started</span>
+              </div>
+              <div id="pay-monthly-setup" style="display:none;">
+                <div style="background:#f7f9fc;border-radius:12px;padding:20px;margin-bottom:20px;">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                      <p style="font-size:13px;color:var(--muted);margin:0;">Monthly Amount</p>
+                      <h3 id="pay-monthly-amount" style="color:var(--primary);margin:5px 0 0;font-weight:800;"></h3>
+                    </div>
+                    <div>
+                      <p style="font-size:13px;color:var(--muted);margin:0;">Billing Cycle</p>
+                      <p style="font-weight:600;margin:5px 0 0;color:#333;">1st of each month</p>
+                    </div>
+                    <button class="btn btn-primary" id="pay-monthly-btn" onclick="setupMonthly()" style="font-size:15px;padding:12px 30px;">
+                      <i class="fa fa-credit-card" style="margin-right:6px;"></i>Set Up Payments
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div id="pay-monthly-active" style="display:none;">
+                <div style="background:#eaf7ee;border-radius:12px;padding:20px;margin-bottom:15px;">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                      <p style="font-size:13px;color:#28a745;margin:0;font-weight:600;">Active Subscription</p>
+                      <p style="font-weight:700;margin:5px 0 0;color:#333;font-size:18px;" id="pay-monthly-active-amt"></p>
+                    </div>
+                    <div>
+                      <p style="font-size:13px;color:var(--muted);margin:0;">Next Payment</p>
+                      <p style="font-weight:600;margin:5px 0 0;color:#333;" id="pay-monthly-next"></p>
+                    </div>
+                  </div>
+                </div>
+                <h6 style="font-weight:700;color:var(--primary);margin-bottom:12px;">Payment History</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+                    <tbody id="pay-history-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="pay-monthly-pending" style="text-align:center;padding:15px;color:var(--muted);font-size:14px;">
+                <i class="fa fa-info-circle" style="margin-right:5px;"></i>Complete the one-time project fee first to set up monthly payments.
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="panel-card">
+              <h5>Payment Summary</h5>
+              <table class="table table-borderless mb-0" style="font-size:14px;">
+                <tr><td style="color:var(--muted);">Project Fee</td><td id="pay-sum-onetime" style="font-weight:600;text-align:right;">—</td></tr>
+                <tr><td style="color:var(--muted);">Monthly Upkeep</td><td id="pay-sum-monthly" style="font-weight:600;text-align:right;">—</td></tr>
+                <tr><td style="color:var(--muted);">Status</td><td id="pay-sum-status" style="font-weight:600;text-align:right;">—</td></tr>
+              </table>
+              <hr style="margin:15px 0;">
+              <div style="text-align:center;font-size:12px;color:var(--muted);">
+                <i class="fa fa-lock" style="margin-right:4px;"></i> Powered by <strong style="color:#635bff;">Stripe</strong>
+              </div>
+            </div>
+            <div class="panel-card">
+              <h5>Need Help?</h5>
+              <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">Questions about billing or payments?</p>
+              <a href="mailto:admin@elevatedsolutions.com" class="btn btn-outline-primary btn-sm w-100"><i class="fa fa-envelope" style="margin-right:6px;"></i>Contact Support</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ Book Consultation Modal ═══ -->
+  <div class="modal fade" id="bookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content" style="border-radius:20px;border:none;overflow:hidden;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#1e3c72,#2a5298);border:none;padding:25px 30px;">
+          <h5 class="modal-title" style="color:#fff;font-weight:700;">Book a Consultation</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="padding:30px;">
+          <div id="book-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+
+          <!-- Step indicators -->
+          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:25px;">
+            <div class="bk-step active" data-step="1"><span>1</span> Date</div>
+            <div class="bk-step" data-step="2"><span>2</span> Time</div>
+            <div class="bk-step" data-step="3"><span>3</span> Details</div>
+          </div>
+
+          <!-- Step 1: Calendar -->
+          <div id="bk-step-1" class="bk-panel">
+            <div style="max-width:400px;margin:0 auto;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                <button type="button" id="bk-cal-prev" class="btn btn-sm btn-outline-primary" style="border-radius:50%;width:36px;height:36px;padding:0;">&lsaquo;</button>
+                <h6 id="bk-cal-label" style="margin:0;font-weight:700;color:#1e3c72;"></h6>
+                <button type="button" id="bk-cal-next" class="btn btn-sm btn-outline-primary" style="border-radius:50%;width:36px;height:36px;padding:0;">&rsaquo;</button>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:4px;margin-bottom:8px;">
+                <div style="font-weight:600;color:#888;font-size:12px;">Sun</div>
+                <div style="font-weight:600;color:#888;font-size:12px;">Mon</div>
+                <div style="font-weight:600;color:#888;font-size:12px;">Tue</div>
+                <div style="font-weight:600;color:#888;font-size:12px;">Wed</div>
+                <div style="font-weight:600;color:#888;font-size:12px;">Thu</div>
+                <div style="font-weight:600;color:#888;font-size:12px;">Fri</div>
+                <div style="font-weight:600;color:#888;font-size:12px;">Sat</div>
+              </div>
+              <div id="bk-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+            </div>
+          </div>
+
+          <!-- Step 2: Time slots -->
+          <div id="bk-step-2" class="bk-panel" style="display:none;">
+            <div style="text-align:center;margin-bottom:15px;">
+              <p style="color:#666;margin:0;">Available times for <strong id="bk-date-label" style="color:#1e3c72;"></strong></p>
+            </div>
+            <div id="bk-slots-loading" style="text-align:center;display:none;padding:20px;">
+              <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+            </div>
+            <div id="bk-slots-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:440px;margin:0 auto;"></div>
+            <div id="bk-slots-empty" style="display:none;text-align:center;padding:20px;color:#888;">No available slots for this date.</div>
+            <div style="text-align:center;margin-top:20px;">
+              <button type="button" class="btn btn-outline-secondary bk-back" data-to="1" style="border-radius:10px;padding:8px 25px;">Back</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Details -->
+          <div id="bk-step-3" class="bk-panel" style="display:none;">
+            <div style="background:#eef3fb;border-radius:12px;padding:15px 20px;margin-bottom:20px;text-align:center;">
+              <p style="margin:0;color:#1e3c72;font-weight:600;" id="bk-confirm-dt"></p>
+            </div>
+            <form id="bk-form">
+              <input type="hidden" id="bk-date">
+              <input type="hidden" id="bk-time">
+              <div class="mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">Consultation Type</label>
+                <select class="form-control" id="bk-type" style="border-radius:10px;padding:10px 15px;">
+                  <option value="general">General Inquiry</option>
+                  <option value="website">Website Design & Development</option>
+                  <option value="seo">SEO & Digital Marketing</option>
+                  <option value="automation">Workflow Automation</option>
+                  <option value="strategy">Digital Strategy</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">Notes <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                <textarea class="form-control" id="bk-notes" rows="3" placeholder="What are your goals?" style="border-radius:10px;padding:10px 15px;" maxlength="1000"></textarea>
+              </div>
+              <button type="submit" class="btn w-100" id="bk-submit-btn" style="background:var(--accent);color:#fff;font-weight:600;border-radius:10px;padding:12px;border:none;font-size:15px;">Confirm Booking</button>
+            </form>
+            <div style="text-align:center;margin-top:10px;">
+              <button type="button" class="btn btn-outline-secondary bk-back" data-to="2" style="border-radius:10px;padding:8px 25px;">Back</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .bk-step { display:flex;align-items:center;gap:6px;font-size:13px;color:#aaa;font-weight:500; }
+    .bk-step span { display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#ddd;color:#fff;font-weight:700;font-size:12px; }
+    .bk-step.active { color:#1e3c72; }
+    .bk-step.active span { background:#1e3c72; }
+    .bk-step.done { color:#28a745; }
+    .bk-step.done span { background:#28a745; }
+    .bk-cal-day { width:100%;aspect-ratio:1;border:none;border-radius:50%;background:transparent;color:#333;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s; }
+    .bk-cal-day:hover:not(:disabled) { background:#e8effa; }
+    .bk-cal-day:disabled { color:#ccc;cursor:default; }
+    .bk-cal-day.available { background:#eef3fb;color:#1e3c72;font-weight:700; }
+    .bk-cal-day.selected { background:#1e3c72;color:#fff; }
+    .bk-slot-btn { border:2px solid #e0e7f1;background:#fff;border-radius:10px;padding:10px 5px;font-size:14px;font-weight:600;color:#1e3c72;cursor:pointer;transition:all .15s; }
+    .bk-slot-btn:hover { border-color:#1e3c72;background:#eef3fb; }
+    .bk-slot-btn.selected { background:#1e3c72;color:#fff;border-color:#1e3c72; }
+  </style>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script>
+  (function() {
+    var API = 'http://127.0.0.1:5000/api';
+    var token = localStorage.getItem('es_token');
+    var user = null;
+    try { user = JSON.parse(localStorage.getItem('es_user')); } catch(e) {}
+
+    // ── Auth check ──
+    if (!token || !user) {
+      document.getElementById('no-auth-screen').style.display = 'flex';
+      return;
+    }
+    document.getElementById('no-auth-screen').style.display = 'none';
+    document.getElementById('dashboard-app').style.display = 'block';
+
+    function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
+
+    function esc(s) {
+      var d = document.createElement('div');
+      d.appendChild(document.createTextNode(s || ''));
+      return d.innerHTML;
+    }
+
+    function handleAuthError() {
+      localStorage.removeItem('es_token');
+      localStorage.removeItem('es_user');
+      window.location.href = 'index.html';
+    }
+
+    var typeLabels = {
+      general: 'General Inquiry', website: 'Website Design',
+      seo: 'SEO & Marketing', automation: 'Automation', strategy: 'Digital Strategy'
+    };
+
+    function formatDate(dateStr) {
+      var d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatTime(timeStr) {
+      var parts = timeStr.split(':');
+      var hr = parseInt(parts[0]);
+      var min = parts[1];
+      var ampm = hr >= 12 ? 'PM' : 'AM';
+      var h12 = hr > 12 ? hr - 12 : (hr === 0 ? 12 : hr);
+      return h12 + ':' + min + ' ' + ampm;
+    }
+
+    function statusBadge(status) {
+      var cls = 'badge-' + status;
+      return '<span class="badge-status ' + cls + '">' + esc(status) + '</span>';
+    }
+
+    // ── Set user info ──
+    document.getElementById('user-display-name').textContent = user.name;
+    document.getElementById('info-name').textContent = user.name;
+    document.getElementById('info-email').textContent = user.email;
+    document.getElementById('info-company').textContent = user.company || '—';
+    document.getElementById('prof-name').value = user.name;
+    document.getElementById('prof-email').value = user.email;
+    document.getElementById('prof-company').value = user.company || '';
+
+    // ── Check payment portal access ──
+    fetch(API + '/me', { headers: authHeaders() })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (data && data.user && data.user.payment_portal) {
+        document.getElementById('nav-payments').style.display = '';
+      }
+    });
+
+    // ── Navigation ──
+    var navLinks = document.querySelectorAll('.sidebar-nav a[data-view]');
+    navLinks.forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        switchView(this.getAttribute('data-view'));
+      });
+    });
+
+    window.switchView = function(view) {
+      navLinks.forEach(function(l) { l.classList.remove('active'); });
+      var active = document.querySelector('.sidebar-nav a[data-view="' + view + '"]');
+      if (active) active.classList.add('active');
+      document.querySelectorAll('.view-section').forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById('view-' + view).classList.add('active');
+      var titles = { overview: 'Overview', consultations: 'My Consultations', profile: 'My Profile', payments: 'Payments' };
+      document.getElementById('page-title').textContent = titles[view] || view;
+      if (view === 'overview') loadDashboard();
+      if (view === 'consultations') loadAllConsultations();
+      if (view === 'payments') loadPayments();
+    };
+
+    // ── Overview / Dashboard ──
+    function loadDashboard() {
+      fetch(API + '/me/dashboard', { headers: authHeaders() })
+      .then(function(r) {
+        if (r.status === 401) { handleAuthError(); return null; }
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data) return;
+        var s = data.stats;
+        document.getElementById('stat-total').textContent = s.total;
+        document.getElementById('stat-scheduled').textContent = s.scheduled;
+        document.getElementById('stat-completed').textContent = s.completed;
+        document.getElementById('stat-cancelled').textContent = s.cancelled;
+
+        var upList = document.getElementById('upcoming-list');
+        var upEmpty = document.getElementById('upcoming-empty');
+        if (data.upcoming.length === 0) {
+          upList.innerHTML = '';
+          upEmpty.style.display = 'block';
+        } else {
+          upEmpty.style.display = 'none';
+          var html = '';
+          data.upcoming.forEach(function(c) {
+            html += '<div class="consult-card">'
+              + '<div>'
+              + '<div class="consult-date">' + formatDate(c.date) + ' at ' + formatTime(c.time) + '</div>'
+              + '<div class="consult-type">' + esc(typeLabels[c.type] || c.type) + '</div>'
+              + (c.notes ? '<div class="consult-notes">' + esc(c.notes) + '</div>' : '')
+              + '</div>'
+              + '<div class="d-flex align-items-center gap-2">'
+              + statusBadge(c.status)
+              + '<button class="btn btn-sm btn-outline-danger" style="border-radius:8px;" onclick="cancelConsult(' + c.id + ')">Cancel</button>'
+              + '</div></div>';
+          });
+          upList.innerHTML = html;
+        }
+      });
+    }
+
+    // ── All Consultations ──
+    var allConsultations = [];
+
+    function loadAllConsultations() {
+      fetch(API + '/consultations', { headers: authHeaders() })
+      .then(function(r) {
+        if (r.status === 401) { handleAuthError(); return null; }
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data) return;
+        allConsultations = data.consultations || [];
+        renderConsultations();
+      });
+    }
+
+    document.getElementById('filter-status').addEventListener('change', renderConsultations);
+
+    function renderConsultations() {
+      var filter = document.getElementById('filter-status').value;
+      var filtered = allConsultations;
+      if (filter) filtered = allConsultations.filter(function(c) { return c.status === filter; });
+
+      var tbody = document.getElementById('all-consults-tbody');
+      var empty = document.getElementById('consults-empty');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      var html = '';
+      filtered.forEach(function(c) {
+        var cancelBtn = c.status === 'scheduled'
+          ? '<button class="btn btn-sm btn-outline-danger" style="border-radius:8px;" onclick="cancelConsult(' + c.id + ')">Cancel</button>'
+          : '<span style="color:#ccc;">—</span>';
+        html += '<tr>'
+          + '<td><strong>' + formatDate(c.date) + '</strong><br><span style="color:var(--muted);font-size:13px;">' + formatTime(c.time) + '</span></td>'
+          + '<td>' + esc(typeLabels[c.type] || c.type) + '</td>'
+          + '<td style="max-width:200px;font-size:13px;color:#888;">' + esc(c.notes || '—') + '</td>'
+          + '<td>' + statusBadge(c.status) + '</td>'
+          + '<td>' + cancelBtn + '</td>'
+          + '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
+    // ── Cancel Consultation ──
+    window.cancelConsult = function(id) {
+      if (!confirm('Cancel this consultation?')) return;
+      fetch(API + '/consultations/' + id, {
+        method: 'DELETE',
+        headers: authHeaders()
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.error) { alert(d.error); return; }
+        loadDashboard();
+        loadAllConsultations();
+      });
+    };
+
+    // ── Profile ──
+    function showProfileAlert(msg, isError) {
+      var el = document.getElementById('profile-alert');
+      el.style.display = 'block';
+      el.style.background = isError ? '#f8d7da' : '#d4edda';
+      el.style.color = isError ? '#721c24' : '#155724';
+      el.textContent = msg;
+    }
+
+    document.getElementById('profile-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var btn = document.getElementById('save-profile-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      document.getElementById('profile-alert').style.display = 'none';
+
+      fetch(API + '/me', {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({
+          name: document.getElementById('prof-name').value.trim(),
+          company: document.getElementById('prof-company').value.trim()
+        })
+      })
+      .then(function(r) {
+        if (r.status === 401) { handleAuthError(); return null; }
+        return r.json().then(function(d) { return { ok: r.ok, data: d }; });
+      })
+      .then(function(res) {
+        if (!res) return;
+        if (!res.ok) { showProfileAlert(res.data.error || 'Update failed', true); return; }
+        showProfileAlert('Profile updated!', false);
+        user = res.data.user;
+        localStorage.setItem('es_user', JSON.stringify(user));
+        document.getElementById('user-display-name').textContent = user.name;
+        document.getElementById('info-name').textContent = user.name;
+        document.getElementById('info-company').textContent = user.company || '—';
+      })
+      .catch(function() { showProfileAlert('Could not connect to server', true); })
+      .finally(function() { btn.disabled = false; btn.textContent = 'Save Changes'; });
+    });
+
+    // ── Change Password ──
+    function showPwAlert(msg, isError) {
+      var el = document.getElementById('password-alert');
+      el.style.display = 'block';
+      el.style.background = isError ? '#f8d7da' : '#d4edda';
+      el.style.color = isError ? '#721c24' : '#155724';
+      el.textContent = msg;
+    }
+
+    document.getElementById('password-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var newPw = document.getElementById('pw-new').value;
+      var confirmPw = document.getElementById('pw-confirm').value;
+      document.getElementById('password-alert').style.display = 'none';
+
+      if (newPw !== confirmPw) { showPwAlert('New passwords do not match', true); return; }
+
+      var btn = document.getElementById('change-pw-btn');
+      btn.disabled = true;
+      btn.textContent = 'Changing...';
+
+      fetch(API + '/me/password', {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({
+          current_password: document.getElementById('pw-current').value,
+          new_password: newPw
+        })
+      })
+      .then(function(r) {
+        if (r.status === 401) { handleAuthError(); return null; }
+        return r.json().then(function(d) { return { ok: r.ok, data: d }; });
+      })
+      .then(function(res) {
+        if (!res) return;
+        if (!res.ok) { showPwAlert(res.data.error || 'Failed', true); return; }
+        showPwAlert('Password changed!', false);
+        document.getElementById('password-form').reset();
+      })
+      .catch(function() { showPwAlert('Could not connect to server', true); })
+      .finally(function() { btn.disabled = false; btn.textContent = 'Change Password'; });
+    });
+
+    // ── Payments ──
+    function fmtMoney(n) { return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+    function loadPayments() {
+      fetch(API + '/me/payments', { headers: authHeaders() })
+      .then(function(r) {
+        if (r.status === 401) { handleAuthError(); return null; }
+        if (r.status === 403) return null;
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data || !data.config) return;
+        var c = data.config;
+
+        // Summary
+        document.getElementById('pay-sum-onetime').textContent = c.onetime_amount ? fmtMoney(c.onetime_amount) : '—';
+        document.getElementById('pay-sum-monthly').textContent = c.monthly_amount ? fmtMoney(c.monthly_amount) + '/mo' : '—';
+
+        // One-time fee
+        if (c.onetime_amount > 0) {
+          document.getElementById('pay-onetime-amount').textContent = fmtMoney(c.onetime_amount);
+          if (c.onetime_paid) {
+            document.getElementById('pay-onetime-section').style.display = 'none';
+            document.getElementById('pay-onetime-paid').style.display = 'block';
+            document.getElementById('pay-onetime-badge').textContent = 'Paid';
+            document.getElementById('pay-onetime-badge').style.background = '#28a745';
+            var paidDate = new Date(c.onetime_paid_at);
+            document.getElementById('pay-onetime-date').textContent = paidDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          } else {
+            document.getElementById('pay-onetime-section').style.display = 'block';
+            document.getElementById('pay-onetime-paid').style.display = 'none';
+          }
+        } else {
+          document.getElementById('pay-onetime-section').style.display = 'none';
+          document.getElementById('pay-onetime-badge').textContent = 'Not Configured';
+          document.getElementById('pay-onetime-badge').style.background = 'var(--muted)';
+        }
+
+        // Monthly
+        document.getElementById('pay-monthly-pending').style.display = 'none';
+        document.getElementById('pay-monthly-setup').style.display = 'none';
+        document.getElementById('pay-monthly-active').style.display = 'none';
+
+        if (c.monthly_amount > 0) {
+          document.getElementById('pay-monthly-amount').textContent = fmtMoney(c.monthly_amount) + '/mo';
+          if (c.monthly_active) {
+            document.getElementById('pay-monthly-active').style.display = 'block';
+            document.getElementById('pay-monthly-badge').textContent = 'Active';
+            document.getElementById('pay-monthly-badge').style.background = '#28a745';
+            document.getElementById('pay-monthly-active-amt').textContent = fmtMoney(c.monthly_amount) + '/mo';
+            var now = new Date();
+            var nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            document.getElementById('pay-monthly-next').textContent = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            // Payment history
+            var tbody = document.getElementById('pay-history-tbody');
+            var hist = data.history || [];
+            var html = '';
+            hist.forEach(function(h) {
+              var d = new Date(h.paid_at || h.created_at);
+              html += '<tr><td style="font-size:14px;">' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</td>'
+                + '<td style="font-weight:600;">' + fmtMoney(h.amount) + '</td>'
+                + '<td><span class="badge-status badge-scheduled">' + esc(h.status) + '</span></td></tr>';
+            });
+            tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:15px;">No payments yet</td></tr>';
+            document.getElementById('pay-sum-status').innerHTML = '<span style="color:#28a745;">Active</span>';
+          } else if (c.onetime_paid) {
+            document.getElementById('pay-monthly-setup').style.display = 'block';
+            document.getElementById('pay-monthly-badge').textContent = 'Ready';
+            document.getElementById('pay-monthly-badge').style.background = '#17a2b8';
+            document.getElementById('pay-sum-status').textContent = 'Monthly not started';
+          } else {
+            document.getElementById('pay-monthly-pending').style.display = 'block';
+            document.getElementById('pay-sum-status').textContent = 'Pending one-time fee';
+          }
+        } else {
+          document.getElementById('pay-monthly-badge').textContent = 'Not Configured';
+          document.getElementById('pay-monthly-badge').style.background = 'var(--muted)';
+        }
+      });
+    }
+
+    window.payOneTime = function() {
+      var btn = document.getElementById('pay-onetime-btn');
+      btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin" style="margin-right:6px;"></i>Redirecting to Stripe...';
+      fetch(API + '/me/payments/onetime', { method: 'POST', headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) { alert(data.error); btn.disabled = false; btn.innerHTML = '<i class="fa fa-lock" style="margin-right:6px;"></i>Pay Now'; return; }
+        if (data.checkout_url) { window.location.href = data.checkout_url; }
+      })
+      .catch(function() { alert('Could not connect to server'); btn.disabled = false; btn.innerHTML = '<i class="fa fa-lock" style="margin-right:6px;"></i>Pay Now'; });
+    };
+
+    window.setupMonthly = function() {
+      var btn = document.getElementById('pay-monthly-btn');
+      btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin" style="margin-right:6px;"></i>Redirecting to Stripe...';
+      fetch(API + '/me/payments/monthly', { method: 'POST', headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) { alert(data.error); btn.disabled = false; btn.innerHTML = '<i class="fa fa-credit-card" style="margin-right:6px;"></i>Set Up Payments'; return; }
+        if (data.checkout_url) { window.location.href = data.checkout_url; }
+      })
+      .catch(function() { alert('Could not connect to server'); btn.disabled = false; btn.innerHTML = '<i class="fa fa-credit-card" style="margin-right:6px;"></i>Set Up Payments'; });
+    };
+
+    // ── Book Consultation Modal ──
+    var bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
+    var bkCalGrid = document.getElementById('bk-cal-grid');
+    var bkCalLabel = document.getElementById('bk-cal-label');
+    var bkAvailDates = {};
+    var bkViewDate = new Date();
+    var bkSelectedDate = null;
+    var bkSelectedTime = null;
+
+    function bkGoStep(step) {
+      document.querySelectorAll('.bk-panel').forEach(function(p) { p.style.display = 'none'; });
+      document.getElementById('bk-step-' + step).style.display = 'block';
+      document.querySelectorAll('.bk-step').forEach(function(s) {
+        var n = parseInt(s.getAttribute('data-step'));
+        s.classList.remove('active', 'done');
+        if (n < step) s.classList.add('done');
+        else if (n === step) s.classList.add('active');
+      });
+    }
+
+    document.querySelectorAll('.bk-back').forEach(function(btn) {
+      btn.addEventListener('click', function() { bkGoStep(parseInt(this.getAttribute('data-to'))); });
+    });
+
+    function bkLoadDates(cb) {
+      fetch(API + '/scheduler/available-dates', { headers: authHeaders() })
+      .then(function(r) { if (r.status === 401) { handleAuthError(); return null; } return r.json(); })
+      .then(function(data) {
+        if (!data) return;
+        bkAvailDates = {};
+        (data.dates || []).forEach(function(d) { bkAvailDates[d.date] = d; });
+        if (cb) cb();
+      });
+    }
+
+    function bkRenderCal() {
+      var year = bkViewDate.getFullYear();
+      var month = bkViewDate.getMonth();
+      var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      bkCalLabel.textContent = months[month] + ' ' + year;
+      var firstDay = new Date(year, month, 1).getDay();
+      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      var today = new Date(); today.setHours(0,0,0,0);
+      var html = '';
+      for (var i = 0; i < firstDay; i++) html += '<div></div>';
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        var isAvail = !!bkAvailDates[dateStr];
+        var isPast = new Date(year, month, d) <= today;
+        var isSel = bkSelectedDate === dateStr;
+        var cls = 'bk-cal-day';
+        if (isAvail && !isPast) cls += ' available';
+        if (isSel) cls += ' selected';
+        html += '<button type="button" class="' + cls + '"' + ((!isAvail || isPast) ? ' disabled' : '') + ' data-date="' + dateStr + '">' + d + '</button>';
+      }
+      bkCalGrid.innerHTML = html;
+      bkCalGrid.querySelectorAll('.bk-cal-day:not(:disabled)').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          bkSelectedDate = this.getAttribute('data-date');
+          bkRenderCal();
+          bkGoStep(2);
+          bkLoadSlots(bkSelectedDate);
+        });
+      });
+    }
+
+    document.getElementById('bk-cal-prev').addEventListener('click', function() { bkViewDate.setMonth(bkViewDate.getMonth() - 1); bkRenderCal(); });
+    document.getElementById('bk-cal-next').addEventListener('click', function() { bkViewDate.setMonth(bkViewDate.getMonth() + 1); bkRenderCal(); });
+
+    function bkLoadSlots(dateStr) {
+      var grid = document.getElementById('bk-slots-grid');
+      var loading = document.getElementById('bk-slots-loading');
+      var empty = document.getElementById('bk-slots-empty');
+      var info = bkAvailDates[dateStr];
+      document.getElementById('bk-date-label').textContent = info ? info.formatted : dateStr;
+      grid.innerHTML = ''; empty.style.display = 'none'; loading.style.display = 'block';
+      bkSelectedTime = null;
+      fetch(API + '/scheduler/slots?date=' + dateStr, { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        loading.style.display = 'none';
+        var slots = data.slots || [];
+        if (!slots.length) { empty.style.display = 'block'; return; }
+        slots.forEach(function(s) {
+          var btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'bk-slot-btn'; btn.textContent = s.label;
+          btn.addEventListener('click', function() {
+            grid.querySelectorAll('.bk-slot-btn').forEach(function(b) { b.classList.remove('selected'); });
+            this.classList.add('selected');
+            bkSelectedTime = s.value;
+            document.getElementById('bk-date').value = dateStr;
+            document.getElementById('bk-time').value = s.value;
+            var dl = info ? info.formatted + ' (' + info.day + ')' : dateStr;
+            document.getElementById('bk-confirm-dt').textContent = dl + ' at ' + s.label;
+            bkGoStep(3);
+          });
+          grid.appendChild(btn);
+        });
+      })
+      .catch(function() { loading.style.display = 'none'; empty.style.display = 'block'; });
+    }
+
+    function showBookAlert(msg, isError) {
+      var el = document.getElementById('book-alert');
+      el.style.display = 'block';
+      el.style.background = isError ? '#f8d7da' : '#d4edda';
+      el.style.color = isError ? '#721c24' : '#155724';
+      el.textContent = msg;
+    }
+
+    document.getElementById('bk-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var btn = document.getElementById('bk-submit-btn');
+      btn.disabled = true; btn.textContent = 'Booking...';
+      document.getElementById('book-alert').style.display = 'none';
+      fetch(API + '/consultations', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({
+          date: document.getElementById('bk-date').value,
+          time: document.getElementById('bk-time').value,
+          type: document.getElementById('bk-type').value,
+          notes: document.getElementById('bk-notes').value.trim()
+        })
+      })
+      .then(function(r) {
+        if (r.status === 401) { handleAuthError(); return null; }
+        return r.json().then(function(d) { return { ok: r.ok, data: d }; });
+      })
+      .then(function(res) {
+        if (!res) return;
+        if (!res.ok) { showBookAlert(res.data.error || 'Booking failed', true); return; }
+        showBookAlert('Consultation booked!', false);
+        document.getElementById('bk-form').reset();
+        bkSelectedDate = null; bkSelectedTime = null;
+        setTimeout(function() {
+          bookModal.hide();
+          loadDashboard();
+          loadAllConsultations();
+        }, 1200);
+      })
+      .catch(function() { showBookAlert('Could not connect to server', true); })
+      .finally(function() { btn.disabled = false; btn.textContent = 'Confirm Booking'; });
+    });
+
+    window.openBookModal = function() {
+      bkSelectedDate = null; bkSelectedTime = null;
+      bkViewDate = new Date();
+      document.getElementById('book-alert').style.display = 'none';
+      bkGoStep(1);
+      bkLoadDates(function() { bkRenderCal(); });
+      bookModal.show();
+    };
+
+    // ── Logout ──
+    document.getElementById('dash-logout').addEventListener('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('es_token');
+      localStorage.removeItem('es_user');
+      window.location.href = 'index.html';
+    });
+
+    // ── Init ──
+    loadDashboard();
+
+    // ── Handle Stripe return ──
+    var urlParams = new URLSearchParams(window.location.search);
+    var paymentResult = urlParams.get('payment');
+    if (paymentResult) {
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      // Wait for nav-payments to appear, then switch
+      setTimeout(function() {
+        if (document.getElementById('nav-payments').style.display !== 'none') {
+          switchView('payments');
+        }
+        if (paymentResult === 'success') {
+          var payType = urlParams.get('type');
+          var msg = payType === 'monthly' ? 'Monthly payments activated!' : 'Payment successful!';
+          alert(msg + ' Your payment has been processed via Stripe.');
+        } else if (paymentResult === 'cancel') {
+          alert('Payment was cancelled. You can try again anytime.');
+        }
+      }, 800);
+    }
+  })();
+  </script>
+</body>
+</html>

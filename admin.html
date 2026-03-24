@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — Elevated Solutions</title>
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <style>
+    :root { --primary: #1e3c72; --accent: #ff5959; --bg: #f4f6fb; --card: #fff; --text: #2a2a2a; --muted: #6c757d; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: var(--text); }
+
+    /* Login screen */
+    #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1e3c72, #2a5298); }
+    .login-card { background: #fff; border-radius: 20px; padding: 40px; width: 400px; max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .login-card h2 { color: var(--primary); font-weight: 700; margin-bottom: 5px; }
+    .login-card p { color: var(--muted); font-size: 14px; margin-bottom: 25px; }
+
+    /* Sidebar */
+    #admin-app { display: none; }
+    .sidebar { position: fixed; top: 0; left: 0; width: 250px; height: 100vh; background: var(--primary); padding-top: 0; z-index: 100; }
+    .sidebar-brand { padding: 25px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-brand h4 { color: #fff; margin: 0; font-weight: 700; font-size: 18px; }
+    .sidebar-brand span { color: var(--accent); }
+    .sidebar-brand small { color: rgba(255,255,255,0.5); font-size: 12px; display: block; margin-top: 4px; }
+    .sidebar-nav { list-style: none; padding: 15px 0; margin: 0; }
+    .sidebar-nav li a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .sidebar-nav li a:hover, .sidebar-nav li a.active { background: rgba(255,255,255,0.1); color: #fff; }
+    .sidebar-nav li a i { width: 20px; text-align: center; }
+    .sidebar-bottom { position: absolute; bottom: 0; width: 100%; padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-bottom a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 13px; }
+    .sidebar-bottom a:hover { color: #fff; }
+
+    /* Main content */
+    .main { margin-left: 250px; padding: 30px; min-height: 100vh; }
+    .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .main-header h2 { font-weight: 700; font-size: 24px; margin: 0; }
+    .main-header .admin-name { color: var(--muted); font-size: 14px; }
+
+    /* Stat cards */
+    .stat-card { background: var(--card); border-radius: 16px; padding: 25px; box-shadow: 0 2px 20px rgba(0,0,0,0.04); }
+    .stat-card .stat-value { font-size: 36px; font-weight: 700; color: var(--primary); }
+    .stat-card .stat-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; }
+    .stat-card.accent .stat-value { color: var(--accent); }
+
+    /* Cards */
+    .panel-card { background: var(--card); border-radius: 16px; padding: 25px; box-shadow: 0 2px 20px rgba(0,0,0,0.04); margin-bottom: 20px; }
+    .panel-card h5 { font-weight: 700; margin-bottom: 20px; color: var(--primary); }
+
+    /* Tables */
+    .table { font-size: 14px; }
+    .table th { font-weight: 600; color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; border-top: none; }
+
+    /* Badges */
+    .badge-role { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-admin { background: #e8d4f8; color: #6f42c1; }
+    .badge-client { background: #d4edda; color: #155724; }
+    .badge-status { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-scheduled { background: #cce5ff; color: #004085; }
+    .badge-completed { background: #d4edda; color: #155724; }
+    .badge-cancelled { background: #f8d7da; color: #721c24; }
+
+    /* Buttons */
+    .btn-es { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 18px; font-weight: 600; font-size: 13px; }
+    .btn-es:hover { background: #e04a4a; color: #fff; }
+    .btn-outline-es { border: 1px solid var(--primary); color: var(--primary); background: transparent; border-radius: 10px; padding: 6px 14px; font-size: 13px; }
+    .btn-outline-es:hover { background: var(--primary); color: #fff; }
+
+    /* Section views */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* Search bar */
+    .search-bar { border-radius: 10px; border: 1px solid #ddd; padding: 8px 15px; font-size: 14px; width: 300px; }
+    .search-bar:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,60,114,0.1); }
+
+    /* Modal overrides */
+    .modal-content { border-radius: 16px; border: none; }
+    .modal-header { background: linear-gradient(135deg, #1e3c72, #2a5298); border: none; padding: 20px 25px; }
+    .modal-title { color: #fff; font-weight: 700; }
+    .modal-body { padding: 25px; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; }
+      .sidebar-brand h4, .sidebar-brand small, .sidebar-nav li a span { display: none; }
+      .sidebar-nav li a { justify-content: center; padding: 15px; }
+      .main { margin-left: 60px; padding: 20px; }
+      .search-bar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ Login Screen ═══ -->
+  <div id="login-screen">
+    <div class="login-card">
+      <h2>Admin Panel</h2>
+      <p>Elevated Solutions — Log in to manage accounts & consultations</p>
+      <div id="login-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;background:#f8d7da;color:#721c24;"></div>
+      <form id="admin-login-form">
+        <div class="mb-3">
+          <label class="form-label" style="font-weight:600;font-size:14px;">Email</label>
+          <input type="email" class="form-control" id="admin-email" placeholder="admin@elevatedsolutions.com" required style="border-radius:10px;padding:10px 15px;">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" style="font-weight:600;font-size:14px;">Password</label>
+          <input type="password" class="form-control" id="admin-password" placeholder="Password" required style="border-radius:10px;padding:10px 15px;">
+        </div>
+        <button type="submit" class="btn btn-es w-100" style="padding:12px;">Log In</button>
+      </form>
+      <p style="text-align:center;margin-top:20px;font-size:13px;color:#aaa;"><a href="index.html" style="color:#1e3c72;">← Back to website</a></p>
+    </div>
+  </div>
+
+  <!-- ═══ Admin App ═══ -->
+  <div id="admin-app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <h4>Elevated<span>Solutions</span></h4>
+        <small>Admin Panel</small>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="#" data-view="dashboard" class="active"><i class="fa fa-tachometer"></i> <span>Dashboard</span></a></li>
+        <li><a href="#" data-view="users"><i class="fa fa-users"></i> <span>Accounts</span></a></li>
+        <li><a href="#" data-view="consultations"><i class="fa fa-calendar"></i> <span>Consultations</span></a></li>
+        <li><a href="#" data-view="availability"><i class="fa fa-clock-o"></i> <span>Availability</span></a></li>
+      </ul>
+      <div class="sidebar-bottom">
+        <a href="#" id="admin-logout"><i class="fa fa-sign-out"></i> Log Out</a>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+      <div class="main-header">
+        <h2 id="page-title">Dashboard</h2>
+        <div class="admin-name">Logged in as <strong id="admin-display-name"></strong></div>
+      </div>
+
+      <!-- ── Dashboard View ── -->
+      <div id="view-dashboard" class="view-section active">
+        <div class="row g-4 mb-4">
+          <div class="col-lg-3 col-md-6"><div class="stat-card"><div class="stat-value" id="stat-users">-</div><div class="stat-label">Total Accounts</div></div></div>
+          <div class="col-lg-3 col-md-6"><div class="stat-card"><div class="stat-value" id="stat-clients">-</div><div class="stat-label">Clients</div></div></div>
+          <div class="col-lg-3 col-md-6"><div class="stat-card accent"><div class="stat-value" id="stat-scheduled">-</div><div class="stat-label">Scheduled</div></div></div>
+          <div class="col-lg-3 col-md-6"><div class="stat-card"><div class="stat-value" id="stat-completed">-</div><div class="stat-label">Completed</div></div></div>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="panel-card">
+              <h5>Recent Signups</h5>
+              <div id="recent-users">Loading...</div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="panel-card">
+              <h5>Upcoming Consultations</h5>
+              <div id="upcoming-consults">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Accounts View ── -->
+      <div id="view-users" class="view-section">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="d-flex gap-2 flex-wrap">
+            <input type="text" class="search-bar" id="user-search" placeholder="Search by name, email, or company...">
+            <select class="form-select" id="user-role-filter" style="border-radius:10px;width:auto;font-size:14px;">
+              <option value="">All Roles</option>
+              <option value="client">Clients</option>
+              <option value="admin">Admins</option>
+            </select>
+          </div>
+          <button class="btn btn-es" onclick="openUserModal()"><i class="fa fa-plus"></i> Add Account</button>
+        </div>
+        <div class="panel-card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+          <div id="users-empty" style="display:none;text-align:center;padding:40px;color:#aaa;">No accounts found</div>
+        </div>
+      </div>
+
+      <!-- ── Consultations View ── -->
+      <div id="view-consultations" class="view-section">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="d-flex gap-2 flex-wrap">
+            <input type="text" class="search-bar" id="consult-search" placeholder="Search by client name or email...">
+            <select class="form-select" id="consult-status-filter" style="border-radius:10px;width:auto;font-size:14px;">
+              <option value="">All Status</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select class="form-select" id="consult-type-filter" style="border-radius:10px;width:auto;font-size:14px;">
+              <option value="">All Types</option>
+              <option value="general">General</option>
+              <option value="website">Website</option>
+              <option value="seo">SEO</option>
+              <option value="automation">Automation</option>
+              <option value="strategy">Strategy</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel-card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Date &amp; Time</th><th>Client</th><th>Type</th><th>Notes</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="consults-tbody"></tbody>
+            </table>
+          </div>
+          <div id="consults-empty" style="display:none;text-align:center;padding:40px;color:#aaa;">No consultations found</div>
+        </div>
+      </div>
+
+      <!-- ── Availability View ── -->
+      <div id="view-availability" class="view-section">
+        <div class="row g-4">
+          <div class="col-lg-7">
+            <div class="panel-card">
+              <h5 style="font-weight:700;margin-bottom:20px;">Weekly Schedule</h5>
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead><tr><th>Day</th><th>Start</th><th>End</th><th>Slot (min)</th><th>Active</th><th>Actions</th></tr></thead>
+                  <tbody id="avail-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="panel-card">
+              <h5 style="font-weight:700;margin-bottom:20px;">Blocked Dates</h5>
+              <form id="block-date-form" class="d-flex gap-2 mb-3 flex-wrap">
+                <input type="date" class="form-control" id="block-date-input" required style="border-radius:10px;width:auto;">
+                <input type="text" class="form-control" id="block-reason-input" placeholder="Reason (optional)" style="border-radius:10px;width:auto;flex:1;">
+                <button type="submit" class="btn btn-danger" style="border-radius:10px;">Block</button>
+              </form>
+              <div id="blocked-dates-list"></div>
+              <div id="blocked-empty" style="display:none;text-align:center;padding:20px;color:#aaa;">No blocked dates</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ User Edit Modal ═══ -->
+  <div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="userModalTitle">Add Account</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="user-modal-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+          <form id="user-form">
+            <input type="hidden" id="user-form-id">
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Name</label>
+              <input type="text" class="form-control" id="user-form-name" required style="border-radius:10px;padding:10px 15px;">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Email</label>
+              <input type="email" class="form-control" id="user-form-email" required style="border-radius:10px;padding:10px 15px;">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Company</label>
+              <input type="text" class="form-control" id="user-form-company" style="border-radius:10px;padding:10px 15px;">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Role</label>
+              <select class="form-select" id="user-form-role" style="border-radius:10px;padding:10px 15px;">
+                <option value="client">Client</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Password <span id="pw-hint" style="color:#aaa;font-weight:400;">(min 8 chars)</span></label>
+              <input type="password" class="form-control" id="user-form-password" minlength="8" style="border-radius:10px;padding:10px 15px;">
+            </div>
+            <button type="submit" class="btn btn-es w-100" id="user-form-btn">Save</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Consultation Edit Modal ═══ -->
+  <div class="modal fade" id="consultModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Update Consultation</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="consult-modal-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+          <form id="consult-form">
+            <input type="hidden" id="consult-form-id">
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Client</label>
+              <input type="text" class="form-control" id="consult-form-client" readonly disabled style="border-radius:10px;padding:10px 15px;background:#f4f6fb;">
+            </div>
+            <div class="row">
+              <div class="col-6 mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">Date</label>
+                <input type="date" class="form-control" id="consult-form-date" style="border-radius:10px;padding:10px 15px;">
+              </div>
+              <div class="col-6 mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">Time</label>
+                <input type="time" class="form-control" id="consult-form-time" style="border-radius:10px;padding:10px 15px;">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Type</label>
+              <select class="form-select" id="consult-form-type" style="border-radius:10px;padding:10px 15px;">
+                <option value="general">General</option>
+                <option value="website">Website</option>
+                <option value="seo">SEO</option>
+                <option value="automation">Automation</option>
+                <option value="strategy">Strategy</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Status</label>
+              <select class="form-select" id="consult-form-status" style="border-radius:10px;padding:10px 15px;">
+                <option value="scheduled">Scheduled</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Notes</label>
+              <textarea class="form-control" id="consult-form-notes" rows="3" style="border-radius:10px;padding:10px 15px;" maxlength="1000"></textarea>
+            </div>
+            <button type="submit" class="btn btn-es w-100">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Payment Config Modal ═══ -->
+  <div class="modal fade" id="payConfigModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="payConfigTitle">Payment Portal</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="pay-config-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+          <p id="pay-config-status" style="font-size:14px;margin-bottom:20px;"></p>
+          <form id="pay-config-form">
+            <input type="hidden" id="pay-config-uid">
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">One-Time Project Fee ($)</label>
+              <input type="number" class="form-control" id="pay-config-onetime" min="0" step="0.01" style="border-radius:10px;padding:10px 15px;" placeholder="e.g. 2500.00">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Monthly Upkeep ($)</label>
+              <input type="number" class="form-control" id="pay-config-monthly" min="0" step="0.01" style="border-radius:10px;padding:10px 15px;" placeholder="e.g. 150.00">
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-es flex-fill" id="pay-config-save-btn">Save &amp; Enable</button>
+              <button type="button" class="btn btn-outline-danger" id="pay-config-disable-btn" style="display:none;" onclick="disablePaymentPortal()">Disable</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script>
+  (function() {
+    var API = 'http://127.0.0.1:5000/api';
+    var token = null;
+    var adminUser = null;
+
+    // ── Helpers ──
+    function esc(s) {
+      var d = document.createElement('div');
+      d.appendChild(document.createTextNode(s || ''));
+      return d.innerHTML;
+    }
+    var escapeHtml = esc;
+    function authHeaders() {
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+    }
+    function fmtDate(d) {
+      if (!d) return '-';
+      var dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    function fmtTime(t) {
+      if (!t) return '-';
+      var parts = t.split(':');
+      var h = parseInt(parts[0]), m = parts[1];
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      h = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+      return h + ':' + m + ' ' + ampm;
+    }
+    function typeLabel(t) {
+      var map = { general: 'General', website: 'Website', seo: 'SEO', automation: 'Automation', strategy: 'Strategy' };
+      return map[t] || t;
+    }
+
+    // ── Login ──
+    var loginForm = document.getElementById('admin-login-form');
+    var loginAlert = document.getElementById('login-alert');
+
+    // Check stored session
+    var stored = localStorage.getItem('es_admin_token');
+    if (stored) {
+      token = stored;
+      adminUser = JSON.parse(localStorage.getItem('es_admin_user') || '{}');
+      showApp();
+    }
+
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      loginAlert.style.display = 'none';
+      fetch(API + '/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('admin-email').value.trim(),
+          password: document.getElementById('admin-password').value
+        })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) { loginAlert.textContent = res.data.error || 'Login failed'; loginAlert.style.display = 'block'; return; }
+        token = res.data.token;
+        adminUser = res.data.user;
+        // Verify admin role
+        return fetch(API + '/admin/stats', { headers: authHeaders() });
+      })
+      .then(function(r) {
+        if (!r) return;
+        if (r.status === 403) {
+          loginAlert.textContent = 'This account does not have admin access.';
+          loginAlert.style.display = 'block';
+          token = null;
+          return;
+        }
+        localStorage.setItem('es_admin_token', token);
+        localStorage.setItem('es_admin_user', JSON.stringify(adminUser));
+        showApp();
+      })
+      .catch(function() {
+        loginAlert.textContent = 'Could not connect to server. Is audit_server.py running?';
+        loginAlert.style.display = 'block';
+      });
+    });
+
+    function showApp() {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-app').style.display = 'block';
+      document.getElementById('admin-display-name').textContent = adminUser.name || 'Admin';
+      loadDashboard();
+    }
+
+    // ── Logout ──
+    document.getElementById('admin-logout').addEventListener('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('es_admin_token');
+      localStorage.removeItem('es_admin_user');
+      token = null;
+      adminUser = null;
+      document.getElementById('admin-app').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+    });
+
+    // ── View Navigation ──
+    var navLinks = document.querySelectorAll('.sidebar-nav a[data-view]');
+    navLinks.forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var view = this.getAttribute('data-view');
+        navLinks.forEach(function(l) { l.classList.remove('active'); });
+        this.classList.add('active');
+        document.querySelectorAll('.view-section').forEach(function(s) { s.classList.remove('active'); });
+        document.getElementById('view-' + view).classList.add('active');
+        var titles = { dashboard: 'Dashboard', users: 'Accounts', consultations: 'Consultations', availability: 'Availability' };
+        document.getElementById('page-title').textContent = titles[view] || view;
+        if (view === 'dashboard') loadDashboard();
+        if (view === 'users') loadUsers();
+        if (view === 'consultations') loadConsultations();
+        if (view === 'availability') loadAvailability();
+      });
+    });
+
+    // ═══ Dashboard ═══
+    function loadDashboard() {
+      fetch(API + '/admin/stats', { headers: authHeaders() })
+      .then(function(r) {
+        if (r.status === 401 || r.status === 403) { handleAuthError(); return null; }
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data) return;
+        document.getElementById('stat-users').textContent = data.users.total;
+        document.getElementById('stat-clients').textContent = data.users.clients;
+        document.getElementById('stat-scheduled').textContent = data.consultations.scheduled;
+        document.getElementById('stat-completed').textContent = data.consultations.completed;
+
+        // Recent users
+        var ru = data.recent_users || [];
+        if (ru.length === 0) {
+          document.getElementById('recent-users').innerHTML = '<p style="color:#aaa;">No accounts yet</p>';
+        } else {
+          var html = '<table class="table table-sm mb-0"><tbody>';
+          ru.forEach(function(u) {
+            html += '<tr><td><strong>' + esc(u.name) + '</strong><br><small style="color:#aaa;">' + esc(u.email) + '</small></td>'
+              + '<td><span class="badge-role badge-' + u.role + '">' + u.role + '</span></td>'
+              + '<td style="color:#aaa;font-size:13px;">' + fmtDate(u.created_at ? u.created_at.split(' ')[0] : '') + '</td></tr>';
+          });
+          html += '</tbody></table>';
+          document.getElementById('recent-users').innerHTML = html;
+        }
+
+        // Upcoming consultations
+        var uc = data.upcoming_consultations || [];
+        if (uc.length === 0) {
+          document.getElementById('upcoming-consults').innerHTML = '<p style="color:#aaa;">No upcoming consultations</p>';
+        } else {
+          var html2 = '<table class="table table-sm mb-0"><tbody>';
+          uc.forEach(function(c) {
+            html2 += '<tr><td><strong>' + fmtDate(c.date) + '</strong> ' + fmtTime(c.time) + '</td>'
+              + '<td>' + esc(c.name) + '<br><small style="color:#aaa;">' + esc(c.email) + '</small></td>'
+              + '<td><span class="badge-status badge-' + c.status + '">' + c.status + '</span></td></tr>';
+          });
+          html2 += '</tbody></table>';
+          document.getElementById('upcoming-consults').innerHTML = html2;
+        }
+      })
+      .catch(function() {});
+    }
+
+    // ═══ Users ═══
+    var userSearch = document.getElementById('user-search');
+    var userRoleFilter = document.getElementById('user-role-filter');
+    var debounceTimer;
+
+    userSearch.addEventListener('input', function() { clearTimeout(debounceTimer); debounceTimer = setTimeout(loadUsers, 300); });
+    userRoleFilter.addEventListener('change', loadUsers);
+
+    function loadUsers() {
+      var params = new URLSearchParams();
+      var s = userSearch.value.trim();
+      var r = userRoleFilter.value;
+      if (s) params.set('search', s);
+      if (r) params.set('role', r);
+      fetch(API + '/admin/users?' + params.toString(), { headers: authHeaders() })
+      .then(function(res) {
+        if (res.status === 401 || res.status === 403) { handleAuthError(); return null; }
+        return res.json();
+      })
+      .then(function(data) {
+        if (!data) return;
+        var users = data.users || [];
+        var tbody = document.getElementById('users-tbody');
+        var empty = document.getElementById('users-empty');
+        if (users.length === 0) {
+          tbody.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        var html = '';
+        users.forEach(function(u) {
+          var ppBtn = u.role === 'client'
+            ? '<button class="btn btn-sm me-1 ' + (u.payment_portal ? 'btn-success' : 'btn-outline-secondary') + '" onclick="togglePaymentPortal(' + u.id + ')" title="' + (u.payment_portal ? 'Payment portal enabled — click to disable' : 'Enable payment portal') + '"><i class="fa fa-dollar"></i></button>'
+            : '';
+          html += '<tr>'
+            + '<td><strong>' + esc(u.name) + '</strong></td>'
+            + '<td>' + esc(u.email) + '</td>'
+            + '<td>' + esc(u.company || '-') + '</td>'
+            + '<td><span class="badge-role badge-' + u.role + '">' + u.role + '</span></td>'
+            + '<td style="font-size:13px;color:#aaa;">' + fmtDate(u.created_at ? u.created_at.split(' ')[0] : '') + '</td>'
+            + '<td>'
+            + ppBtn
+            + '<button class="btn btn-sm btn-outline-es me-1" onclick="editUser(' + u.id + ')"><i class="fa fa-pencil"></i></button>'
+            + '<button class="btn btn-sm btn-outline-danger" onclick="deleteUser(' + u.id + ', \'' + esc(u.name).replace(/'/g, "\\'") + '\')"><i class="fa fa-trash"></i></button>'
+            + '</td></tr>';
+        });
+        tbody.innerHTML = html;
+      });
+    }
+
+    // User modal
+    var userModal = new bootstrap.Modal(document.getElementById('userModal'));
+    var userForm = document.getElementById('user-form');
+    var userAlert = document.getElementById('user-modal-alert');
+
+    window.openUserModal = function(user) {
+      userAlert.style.display = 'none';
+      document.getElementById('user-form-id').value = '';
+      document.getElementById('user-form-name').value = '';
+      document.getElementById('user-form-email').value = '';
+      document.getElementById('user-form-company').value = '';
+      document.getElementById('user-form-role').value = 'client';
+      document.getElementById('user-form-password').value = '';
+      document.getElementById('user-form-password').required = true;
+      document.getElementById('pw-hint').textContent = '(min 8 chars)';
+      document.getElementById('userModalTitle').textContent = 'Add Account';
+      document.getElementById('user-form-btn').textContent = 'Create Account';
+      if (user) {
+        document.getElementById('user-form-id').value = user.id;
+        document.getElementById('user-form-name').value = user.name;
+        document.getElementById('user-form-email').value = user.email;
+        document.getElementById('user-form-company').value = user.company || '';
+        document.getElementById('user-form-role').value = user.role;
+        document.getElementById('user-form-password').required = false;
+        document.getElementById('pw-hint').textContent = '(leave blank to keep current)';
+        document.getElementById('userModalTitle').textContent = 'Edit Account';
+        document.getElementById('user-form-btn').textContent = 'Save Changes';
+      }
+      userModal.show();
+    };
+
+    window.editUser = function(id) {
+      fetch(API + '/admin/users/' + id, { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) { if (data.user) openUserModal(data.user); });
+    };
+
+    window.deleteUser = function(id, name) {
+      if (!confirm('Delete account "' + name + '" and all associated data? This cannot be undone.')) return;
+      fetch(API + '/admin/users/' + id, { method: 'DELETE', headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function() { loadUsers(); loadDashboard(); });
+    };
+
+    window.togglePaymentPortal = function(id) {
+      document.getElementById('pay-config-uid').value = id;
+      document.getElementById('pay-config-alert').style.display = 'none';
+      document.getElementById('pay-config-onetime').value = '';
+      document.getElementById('pay-config-monthly').value = '';
+      // Load existing config
+      fetch(API + '/admin/users/' + id + '/payment-config', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var cfg = data.config;
+        if (cfg) {
+          document.getElementById('pay-config-onetime').value = cfg.onetime_amount || '';
+          document.getElementById('pay-config-monthly').value = cfg.monthly_amount || '';
+        }
+      });
+      // Check current status
+      fetch(API + '/admin/users/' + id, { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var u = data.user;
+        if (u && u.payment_portal) {
+          document.getElementById('pay-config-status').innerHTML = '<span style="color:#28a745;font-weight:600;"><i class="fa fa-check-circle"></i> Payment portal is <strong>enabled</strong> for ' + esc(u.name) + '</span>';
+          document.getElementById('pay-config-save-btn').textContent = 'Save Changes';
+          document.getElementById('pay-config-disable-btn').style.display = 'block';
+        } else {
+          document.getElementById('pay-config-status').innerHTML = 'Configure payment amounts and enable the portal for <strong>' + esc(u ? u.name : '') + '</strong>';
+          document.getElementById('pay-config-save-btn').textContent = 'Save & Enable';
+          document.getElementById('pay-config-disable-btn').style.display = 'none';
+        }
+        payConfigModal.show();
+      });
+    };
+
+    var payConfigModal = new bootstrap.Modal(document.getElementById('payConfigModal'));
+
+    document.getElementById('pay-config-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var uid = document.getElementById('pay-config-uid').value;
+      var onetime = parseFloat(document.getElementById('pay-config-onetime').value) || 0;
+      var monthly = parseFloat(document.getElementById('pay-config-monthly').value) || 0;
+      var alertEl = document.getElementById('pay-config-alert');
+
+      // Save config
+      fetch(API + '/admin/users/' + uid + '/payment-config', {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ onetime_amount: onetime, monthly_amount: monthly })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function() {
+        // Enable portal if not already
+        return fetch(API + '/admin/users/' + uid, { headers: authHeaders() })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.user && !data.user.payment_portal) {
+            return fetch(API + '/admin/users/' + uid + '/payment-portal', { method: 'POST', headers: authHeaders() });
+          }
+        });
+      })
+      .then(function() {
+        alertEl.style.display = 'block';
+        alertEl.style.background = '#d4edda';
+        alertEl.style.color = '#155724';
+        alertEl.textContent = 'Payment portal enabled and configured!';
+        loadUsers();
+        setTimeout(function() { payConfigModal.hide(); }, 1000);
+      });
+    });
+
+    window.disablePaymentPortal = function() {
+      var uid = document.getElementById('pay-config-uid').value;
+      if (!confirm('Disable payment portal for this client?')) return;
+      fetch(API + '/admin/users/' + uid + '/payment-portal', { method: 'POST', headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function() {
+        payConfigModal.hide();
+        loadUsers();
+      });
+    };
+
+    userForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      userAlert.style.display = 'none';
+      var id = document.getElementById('user-form-id').value;
+      var payload = {
+        name: document.getElementById('user-form-name').value.trim(),
+        email: document.getElementById('user-form-email').value.trim(),
+        company: document.getElementById('user-form-company').value.trim(),
+        role: document.getElementById('user-form-role').value
+      };
+      var pw = document.getElementById('user-form-password').value;
+      if (pw) payload.password = pw;
+
+      var url = id ? API + '/admin/users/' + id : API + '/admin/users';
+      var method = id ? 'PUT' : 'POST';
+
+      fetch(url, { method: method, headers: authHeaders(), body: JSON.stringify(payload) })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) {
+          userAlert.style.display = 'block';
+          userAlert.style.background = '#f8d7da';
+          userAlert.style.color = '#721c24';
+          userAlert.textContent = res.data.error || 'Failed';
+          return;
+        }
+        userModal.hide();
+        loadUsers();
+        loadDashboard();
+      });
+    });
+
+    // ═══ Consultations ═══
+    var consultSearch = document.getElementById('consult-search');
+    var consultStatusFilter = document.getElementById('consult-status-filter');
+    var consultTypeFilter = document.getElementById('consult-type-filter');
+    var debounceTimer2;
+
+    consultSearch.addEventListener('input', function() { clearTimeout(debounceTimer2); debounceTimer2 = setTimeout(loadConsultations, 300); });
+    consultStatusFilter.addEventListener('change', loadConsultations);
+    consultTypeFilter.addEventListener('change', loadConsultations);
+
+    function loadConsultations() {
+      var params = new URLSearchParams();
+      var s = consultSearch.value.trim();
+      var st = consultStatusFilter.value;
+      var tp = consultTypeFilter.value;
+      if (s) params.set('search', s);
+      if (st) params.set('status', st);
+      if (tp) params.set('type', tp);
+      fetch(API + '/admin/consultations?' + params.toString(), { headers: authHeaders() })
+      .then(function(res) {
+        if (res.status === 401 || res.status === 403) { handleAuthError(); return null; }
+        return res.json();
+      })
+      .then(function(data) {
+        if (!data) return;
+        var list = data.consultations || [];
+        var tbody = document.getElementById('consults-tbody');
+        var empty = document.getElementById('consults-empty');
+        if (list.length === 0) {
+          tbody.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        var html = '';
+        list.forEach(function(c) {
+          html += '<tr>'
+            + '<td><strong>' + fmtDate(c.date) + '</strong><br>' + fmtTime(c.time) + '</td>'
+            + '<td>' + esc(c.name) + '<br><small style="color:#aaa;">' + esc(c.email) + '</small></td>'
+            + '<td>' + typeLabel(c.type) + '</td>'
+            + '<td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(c.notes || '') + '">' + esc(c.notes || '-') + '</td>'
+            + '<td><span class="badge-status badge-' + c.status + '">' + c.status + '</span></td>'
+            + '<td>'
+            + '<button class="btn btn-sm btn-outline-es me-1" onclick="editConsult(' + c.id + ')"><i class="fa fa-pencil"></i></button>'
+            + '<button class="btn btn-sm btn-outline-danger" onclick="deleteConsult(' + c.id + ')"><i class="fa fa-trash"></i></button>'
+            + '</td></tr>';
+          // Store data for edit
+          window['_c_' + c.id] = c;
+        });
+        tbody.innerHTML = html;
+      });
+    }
+
+    // Consultation modal
+    var consultModal = new bootstrap.Modal(document.getElementById('consultModal'));
+    var consultForm = document.getElementById('consult-form');
+    var consultFormAlert = document.getElementById('consult-modal-alert');
+
+    window.editConsult = function(id) {
+      var c = window['_c_' + id];
+      if (!c) return;
+      consultFormAlert.style.display = 'none';
+      document.getElementById('consult-form-id').value = c.id;
+      document.getElementById('consult-form-client').value = c.name + ' (' + c.email + ')';
+      document.getElementById('consult-form-date').value = c.date;
+      document.getElementById('consult-form-time').value = c.time;
+      document.getElementById('consult-form-type').value = c.type;
+      document.getElementById('consult-form-status').value = c.status;
+      document.getElementById('consult-form-notes').value = c.notes || '';
+      consultModal.show();
+    };
+
+    window.deleteConsult = function(id) {
+      if (!confirm('Delete this consultation? This cannot be undone.')) return;
+      fetch(API + '/admin/consultations/' + id, { method: 'DELETE', headers: authHeaders() })
+      .then(function() { loadConsultations(); loadDashboard(); });
+    };
+
+    consultForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      consultFormAlert.style.display = 'none';
+      var id = document.getElementById('consult-form-id').value;
+      fetch(API + '/admin/consultations/' + id, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          date: document.getElementById('consult-form-date').value,
+          time: document.getElementById('consult-form-time').value,
+          type: document.getElementById('consult-form-type').value,
+          status: document.getElementById('consult-form-status').value,
+          notes: document.getElementById('consult-form-notes').value.trim()
+        })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) {
+          consultFormAlert.style.display = 'block';
+          consultFormAlert.style.background = '#f8d7da';
+          consultFormAlert.style.color = '#721c24';
+          consultFormAlert.textContent = res.data.error || 'Failed';
+          return;
+        }
+        consultModal.hide();
+        loadConsultations();
+        loadDashboard();
+      });
+    });
+
+    // ── Availability Management ──
+    function loadAvailability() {
+      fetch(API + '/admin/availability', { headers: authHeaders() })
+      .then(function(r) { if (r.status === 401 || r.status === 403) { handleAuthError(); return null; } return r.json(); })
+      .then(function(data) {
+        if (!data) return;
+        var tbody = document.getElementById('avail-tbody');
+        var rows = data.availability || [];
+        if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;">No availability configured</td></tr>'; return; }
+        var html = '';
+        rows.forEach(function(a) {
+          html += '<tr>'
+            + '<td><strong>' + escapeHtml(a.day_name) + '</strong></td>'
+            + '<td>' + escapeHtml(a.start_time) + '</td>'
+            + '<td>' + escapeHtml(a.end_time) + '</td>'
+            + '<td>' + a.slot_duration + '</td>'
+            + '<td>' + (a.is_active ? '<span style="color:#28a745;font-weight:600;">Active</span>' : '<span style="color:#dc3545;font-weight:600;">Inactive</span>') + '</td>'
+            + '<td><button class="btn btn-sm btn-outline-primary" style="border-radius:8px;" onclick="editAvailability(' + a.id + ',\'' + escapeHtml(a.start_time) + '\',\'' + escapeHtml(a.end_time) + '\',' + a.slot_duration + ',' + a.is_active + ')">Edit</button></td>'
+            + '</tr>';
+        });
+        tbody.innerHTML = html;
+      });
+
+      loadBlockedDates();
+    }
+
+    window.editAvailability = function(id, start, end, dur, active) {
+      var newStart = prompt('Start time (HH:MM):', start);
+      if (newStart === null) return;
+      var newEnd = prompt('End time (HH:MM):', end);
+      if (newEnd === null) return;
+      var newDur = prompt('Slot duration (minutes):', dur);
+      if (newDur === null) return;
+      var newActive = confirm('Active? OK=Yes, Cancel=No');
+      fetch(API + '/admin/availability/' + id, {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ start_time: newStart, end_time: newEnd, slot_duration: parseInt(newDur), is_active: newActive })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.error) { alert(d.error); return; }
+        loadAvailability();
+      });
+    };
+
+    function loadBlockedDates() {
+      fetch(API + '/admin/blocked-dates', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var list = data.blocked_dates || [];
+        var container = document.getElementById('blocked-dates-list');
+        var empty = document.getElementById('blocked-empty');
+        if (list.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+        var html = '';
+        list.forEach(function(b) {
+          var d = new Date(b.date + 'T00:00:00');
+          var label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;background:#fff5f5;border-radius:10px;padding:10px 15px;margin-bottom:8px;">'
+            + '<div><strong style="color:#dc3545;">' + label + '</strong>' + (b.reason ? ' <span style="color:#888;font-size:13px;">— ' + escapeHtml(b.reason) + '</span>' : '') + '</div>'
+            + '<button class="btn btn-sm btn-outline-danger" style="border-radius:8px;" onclick="removeBlockedDate(' + b.id + ')">Remove</button>'
+            + '</div>';
+        });
+        container.innerHTML = html;
+      });
+    }
+
+    window.removeBlockedDate = function(id) {
+      if (!confirm('Remove this blocked date?')) return;
+      fetch(API + '/admin/blocked-dates/' + id, { method: 'DELETE', headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function() { loadBlockedDates(); });
+    };
+
+    document.getElementById('block-date-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var dateVal = document.getElementById('block-date-input').value;
+      var reason = document.getElementById('block-reason-input').value.trim();
+      if (!dateVal) return;
+      fetch(API + '/admin/blocked-dates', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ date: dateVal, reason: reason })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.error) { alert(d.error); return; }
+        document.getElementById('block-date-input').value = '';
+        document.getElementById('block-reason-input').value = '';
+        loadBlockedDates();
+      });
+    });
+
+    // ── Auth error handler ──
+    function handleAuthError() {
+      localStorage.removeItem('es_admin_token');
+      localStorage.removeItem('es_admin_user');
+      token = null;
+      document.getElementById('admin-app').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      loginAlert.textContent = 'Session expired. Please log in again.';
+      loginAlert.style.display = 'block';
+    }
+  })();
+  </script>
+</body>
+</html>
