@@ -1501,6 +1501,33 @@ responsive
   .main-banner .left-content form input {
     width: 100%!important;
   }
+  .main-banner .left-content form {
+    height: auto !important;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .main-banner .left-content form input {
+    height: 50px !important;
+    background-color: #e8f4fd !important;
+    color: #2a2a2a !important;
+    border: 1px solid #ccc !important;
+    border-radius: 10px !important;
+    position: static !important;
+  }
+  .main-banner .left-content form input::placeholder {
+    color: #888 !important;
+  }
+  .main-banner .left-content form button {
+    position: static !important;
+    width: 100% !important;
+    background-color: #03a4ed !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    padding: 14px 25px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+  }
   #about {
     margin-top: 0px;
   }
@@ -1617,7 +1644,67 @@ responsive
   .phone-info h4 span i {
     margin-left: 0px;
   }
+
+  /* strong mobile header consistency */
+  .header-area .main-nav,
+  .header-area .container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100%;
+  }
+
+  .header-area .logo,
+  .header-area .main-nav .logo {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+    text-transform: none !important;
+    letter-spacing: 1px !important;
+    color: #03a4ed !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 44px !important;
+  }
+
+  .header-area .main-nav .logo h4 {
+    margin: 0 !important;
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+    text-transform: none !important;
+    letter-spacing: 1px !important;
+  }
+
+  .header-area .main-nav .menu-trigger {
+    position: relative !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 44px !important;
+    height: 44px !important;
+    margin-left: auto !important;
+    background: transparent !important;
+    align-items: center !important;
+    justify-content: center !important;
+    display: inline-flex !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0,0,0,.08) !important;
+  }
+
+  .header-area .main-nav .menu-trigger span,
+  .header-area .main-nav .menu-trigger span:before,
+  .header-area .main-nav .menu-trigger span:after {
+    width: 24px !important;
+    height: 2px !important;
+    left: 0 !important;
+  }
+
+  .header-area .main-nav .nav {
+    margin-top: 0 !important;
+    width: 100% !important;
+  }
 }
+
 
 /* 
 ===============================================
@@ -1665,7 +1752,7 @@ Improved spacing, typography, touch targets, forms, and images for mobile device
 
   /* Banner Section Mobile Improvements */
   .main-banner {
-    padding: 40px 0 !important;
+    padding: 110px 0px 60px 0px !important;
   }
 
   .main-banner .row {
@@ -1748,6 +1835,7 @@ Improved spacing, typography, touch targets, forms, and images for mobile device
     display: flex;
     flex-direction: column;
     gap: 10px;
+    height: auto !important;
   }
 
   #audit-form fieldset {
@@ -1757,10 +1845,21 @@ Improved spacing, typography, touch targets, forms, and images for mobile device
 
   #audit-form input {
     width: 100%;
+    background-color: #e8f4fd !important;
+    color: #2a2a2a !important;
+    border: 1px solid #ccc !important;
+    border-radius: 10px !important;
+    height: 50px !important;
+  }
+
+  #audit-form input::placeholder {
+    color: #888 !important;
   }
 
   #audit-form button {
     width: 100%;
+    position: static !important;
+    border-radius: 10px !important;
   }
 
   /* Image Responsiveness */
@@ -1862,7 +1961,7 @@ Improved spacing, typography, touch targets, forms, and images for mobile device
   }
 
   .main-banner {
-    padding: 30px 0 !important;
+    padding: 100px 0px 40px 0px !important;
   }
 
   .main-banner .left-content h2 {
