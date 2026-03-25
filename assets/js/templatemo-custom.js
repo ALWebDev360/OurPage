@@ -16,6 +16,30 @@
   });
 
 
+	$('.owl-clients').owlCarousel({
+		items:6,
+		loop:true,
+		dots: true,
+		nav: false,
+		autoplay: true,
+		margin:10,
+		  responsive:{
+			  0:{
+				  items:2
+			  },
+			  600:{
+				  items:3
+			  },
+			  1000:{
+				  items:4
+			  },
+			  1600:{
+				  items:6
+			  }
+		  }
+	})
+	
+
 	$('.owl-our-team').owlCarousel({
 		items:3,
 		loop:true,
