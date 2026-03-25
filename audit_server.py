@@ -315,7 +315,12 @@ PORKBUN_SECRET_KEY = os.environ.get("PORKBUN_SECRET_KEY", "")
 
 # --- Database Setup ---
 # Use /data volume on Fly.io for persistent storage, otherwise local
-_data_dir = os.environ.get("DATA_DIR", os.path.dirname(__file__))
+_data_dir = os.environ.get("DATA_DIR", "/data" if os.path.isdir("/data") else os.path.dirname(__file__))
+if not os.path.isdir(_data_dir):
+    try:
+        os.makedirs(_data_dir, exist_ok=True)
+    except Exception:
+        pass
 DB_PATH = os.path.join(_data_dir, "elevatedsolutions.db")
 
 
