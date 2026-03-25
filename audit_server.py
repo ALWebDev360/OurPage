@@ -298,7 +298,7 @@ from extractor.src.images import find_all_images
 from extractor.src.links import find_all_links
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.app", "https://*.ngrok.io", "null"])
+CORS(app, origins=["http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.app", "https://*.ngrok.io", "https://elevatedsolutions.design", "https://www.elevatedsolutions.design", "https://elevatedsolutions-app.fly.dev", "null"])
 
 # --- Stripe Configuration ---
 # Set these to your Stripe keys (use env vars in production)
@@ -314,7 +314,9 @@ PORKBUN_API_KEY = os.environ.get("PORKBUN_API_KEY", "")
 PORKBUN_SECRET_KEY = os.environ.get("PORKBUN_SECRET_KEY", "")
 
 # --- Database Setup ---
-DB_PATH = os.path.join(os.path.dirname(__file__), "elevatedsolutions.db")
+# Use /data volume on Fly.io for persistent storage, otherwise local
+_data_dir = os.environ.get("DATA_DIR", os.path.dirname(__file__))
+DB_PATH = os.path.join(_data_dir, "elevatedsolutions.db")
 
 
 def get_db():
@@ -3251,4 +3253,6 @@ def serve_static_file(filepath):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_ENV", "development") == "development"
+    app.run(host="0.0.0.0", port=port, debug=debug)

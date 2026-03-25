@@ -1,0 +1,7 @@
+flask>=2.3
+flask-cors>=4.0
+beautifulsoup4>=4.9
+requests>=2.24
+lxml>=4.6
+stripe>=5.0
+gunicorn>=21.2
