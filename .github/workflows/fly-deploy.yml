@@ -22,6 +22,6 @@ jobs:
           echo "Contents of /home/runner/.fly/bin:"
           ls -l /home/runner/.fly/bin
       - name: Authenticate Fly
-        run: flyctl auth login --token ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl auth login --access-token ${{ secrets.FLY_API_TOKEN }}
       - name: Deploy to Fly
         run: flyctl deploy --config fly.toml --remote-only --strategy immediate
