@@ -667,7 +667,7 @@ header
     border-bottom: 1px solid rgba(0,0,0,0.04);
   }
   .header-area .container {
-    padding: 0px;
+    padding: 0 8px 0 15px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -683,9 +683,11 @@ header
     flex-shrink: 0;
     order: 2;
     margin-left: auto;
-    position: relative !important;
-    top: auto !important;
-    right: auto !important;
+    margin-right: 0;
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    transform: translateY(-50%);
     width: 44px !important;
     height: 44px !important;
     align-items: center;
