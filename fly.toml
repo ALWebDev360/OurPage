@@ -1,4 +1,4 @@
-app = "YOUR_FLY_APP_NAME"
+app = "elevatedsolutions-app"
 primary_region = "iad"
 
 [build]
