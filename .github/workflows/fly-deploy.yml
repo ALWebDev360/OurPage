@@ -12,18 +12,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Fly CLI
-        uses: superfly/flyctl-actions@v1
-        with:
-          token: ${{ secrets.FLY_API_TOKEN }}
-
-      - name: Install flyctl (fallback)
-        if: failure()
+      - name: Install flyctl
         run: |
           curl -L https://fly.io/install.sh | sh
-          export PATH="$HOME/.fly/bin:$PATH"
-
+          echo "export PATH=$HOME/.fly/bin:$PATH" >> $GITHUB_ENV
+      - name: Authenticate Fly
+        run: |
+          source $GITHUB_ENV
+          flyctl auth login --token ${{ secrets.FLY_API_TOKEN }}
       - name: Deploy to Fly
         run: |
-          export PATH="$HOME/.fly/bin:$PATH"
+          source $GITHUB_ENV
           flyctl deploy --config fly.toml --remote-only --strategy immediate
