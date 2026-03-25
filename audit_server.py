@@ -289,13 +289,21 @@ import requests as http_requests
 from bs4 import BeautifulSoup
 import stripe
 
-# Add the toolkit's server directory to the path so we can import its modules
+# Add the toolkit's server and extractor source directories to the path so we can import modules
 TOOLKIT_PATH = os.path.join(os.path.dirname(__file__), "seo-audits-toolkit", "server")
-sys.path.insert(0, TOOLKIT_PATH)
+EXTRACTOR_SRC_PATH = os.path.join(TOOLKIT_PATH, "extractor", "src")
+for path in [TOOLKIT_PATH, EXTRACTOR_SRC_PATH]:
+    if os.path.isdir(path):
+        sys.path.insert(0, path)
 
-from extractor.src.headers import find_all_headers_url
-from extractor.src.images import find_all_images
-from extractor.src.links import find_all_links
+try:
+    from extractor.src.headers import find_all_headers_url
+    from extractor.src.images import find_all_images
+    from extractor.src.links import find_all_links
+except ModuleNotFoundError:
+    from headers import find_all_headers_url
+    from images import find_all_images
+    from links import find_all_links
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.app", "https://*.ngrok.io", "https://elevatedsolutions.design", "https://www.elevatedsolutions.design", "https://elevatedsolutions-app.fly.dev", "null"])
