@@ -1,3 +1,7 @@
 [submodule "SEOstats"]
 	path = SEOstats
 	url = https://github.com/eyecatchup/SEOstats.git
+
+[submodule "seo-audits-toolkit"]
+	path = seo-audits-toolkit
+	url = https://github.com/StanGirard/seo-audits-toolkit.git
