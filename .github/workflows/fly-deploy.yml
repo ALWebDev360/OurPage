@@ -13,9 +13,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Fly CLI
-        uses: superfly/flyctl-actions@v2
+        uses: superfly/flyctl-actions@v1
         with:
-          fly_token: ${{ secrets.FLY_API_TOKEN }}
+          token: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Install flyctl (fallback)
+        if: failure()
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          export PATH="$HOME/.fly/bin:$PATH"
 
       - name: Deploy to Fly
-        run: flyctl deploy --config fly.toml --remote-only --strategy immediate
+        run: |
+          export PATH="$HOME/.fly/bin:$PATH"
+          flyctl deploy --config fly.toml --remote-only --strategy immediate
