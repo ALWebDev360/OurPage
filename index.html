@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="assets/css/templatemo-space-dynamic.css">
     <link rel="stylesheet" href="assets/css/animated.css">
     <link rel="stylesheet" href="assets/css/owl.css">
+    <link rel="stylesheet" href="assets/css/gomobile-overrides.css">
 <!--
     
 TemplateMo 562 Space Dynamic
@@ -75,6 +76,9 @@ https://templatemo.com/tm-562-space-dynamic
     </div>
   </header>
   <!-- ***** Header Area End ***** -->
+  
+  <!-- Mobile Nav Overlay -->
+  <div class="nav-overlay" id="nav-overlay"></div>
 
   <div class="main-banner wow fadeIn" id="top" data-wow-duration="1s" data-wow-delay="0.5s">
     <div class="container">
@@ -1595,38 +1599,87 @@ https://templatemo.com/tm-562-space-dynamic
   })();
   </script>
 
-  <!-- Mobile Sticky CTA visibility logic -->
+  <!-- Mobile Sticky CTA & GoMobileUX Interactions -->
   <script>
   (function() {
     var stickyEl = document.getElementById('mobile-sticky-cta');
-    if (!stickyEl) return;
+    var headerEl = document.querySelector('.header-area');
+    var navOverlay = document.getElementById('nav-overlay');
+    var navEl = headerEl ? headerEl.querySelector('.nav') : null;
+    var menuTrigger = headerEl ? headerEl.querySelector('.menu-trigger') : null;
 
     function isMobile() { return window.innerWidth <= 768; }
 
-    // Hide on desktop
+    // ── Sticky CTA: hide near top, show on scroll ──
     function toggleSticky() {
-      if (!isMobile()) {
-        stickyEl.style.display = 'none';
-      } else {
-        stickyEl.style.display = 'flex';
-      }
+      if (!stickyEl) return;
+      stickyEl.style.display = isMobile() ? 'flex' : 'none';
     }
 
-    // Hide sticky CTA when user is near top (hero is visible)
-    var lastScroll = 0;
     window.addEventListener('scroll', function() {
       if (!isMobile()) return;
+
       var scrollY = window.pageYOffset || document.documentElement.scrollTop;
-      if (scrollY < 300) {
-        stickyEl.style.transform = 'translateY(100%)';
-      } else {
-        stickyEl.style.transform = 'translateY(0)';
+
+      // Sticky CTA visibility
+      if (stickyEl) {
+        stickyEl.style.transform = scrollY < 300 ? 'translateY(100%)' : 'translateY(0)';
       }
-      lastScroll = scrollY;
+
+      // GoMobileUX-style header shadow on scroll
+      if (headerEl) {
+        if (scrollY > 10) {
+          headerEl.classList.add('scrolled');
+        } else {
+          headerEl.classList.remove('scrolled');
+        }
+      }
     }, { passive: true });
 
     window.addEventListener('resize', toggleSticky);
     toggleSticky();
+
+    // ── GoMobileUX-style slide-in nav ──
+    if (menuTrigger && navEl && navOverlay) {
+      // Override the default menu-trigger click for mobile
+      menuTrigger.addEventListener('click', function(e) {
+        if (!isMobile()) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        var isOpen = navEl.classList.contains('open');
+        if (isOpen) {
+          navEl.classList.remove('open');
+          navOverlay.classList.remove('active');
+          menuTrigger.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          navEl.classList.add('open');
+          navOverlay.classList.add('active');
+          menuTrigger.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      });
+
+      // Close on overlay tap
+      navOverlay.addEventListener('click', function() {
+        navEl.classList.remove('open');
+        navOverlay.classList.remove('active');
+        menuTrigger.classList.remove('active');
+        document.body.style.overflow = '';
+      });
+
+      // Close on nav link tap
+      navEl.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() {
+          if (!isMobile()) return;
+          navEl.classList.remove('open');
+          navOverlay.classList.remove('active');
+          menuTrigger.classList.remove('active');
+          document.body.style.overflow = '';
+        });
+      });
+    }
   })();
   </script>
 

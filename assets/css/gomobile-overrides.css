@@ -1,0 +1,708 @@
+/* ============================================
+   GoMobileUX-Inspired Mobile Overrides
+   Based on github.com/AdminUIUX/gomobileux-v1.0
+   Applied only on screens <= 768px
+   ============================================ */
+
+@media (max-width: 768px) {
+
+  /* ── Global Reset & Touch Optimizations ── */
+  html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    -webkit-overflow-scrolling: touch;
+    -webkit-tap-highlight-color: transparent;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+    overscroll-behavior-y: contain;
+  }
+
+  * {
+    -webkit-touch-callout: none;
+  }
+
+  /* Allow text selection in inputs/textareas */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+  }
+
+
+  /* ── Fixed Header — GoMobileUX Pattern ── */
+  .header-area {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 100 !important;
+    height: auto !important;
+    min-height: 56px !important;
+    padding: env(safe-area-inset-top) 12px 0 12px !important;
+    background-color: #fff !important;
+    transition: box-shadow 0.3s ease, background-color 0.3s ease !important;
+    box-shadow: none;
+  }
+
+  .header-area.scrolled,
+  .background-header {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .header-area .main-nav .logo h4 {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    line-height: 56px !important;
+  }
+
+  .header-area .main-nav .menu-trigger {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    border: none !important;
+    background-color: #f5f5f5 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background-color 0.2s ease !important;
+  }
+
+  .header-area .main-nav .menu-trigger:active {
+    background-color: #e8e8e8 !important;
+  }
+
+  .header-area .main-nav .menu-trigger span,
+  .header-area .main-nav .menu-trigger span:before,
+  .header-area .main-nav .menu-trigger span:after {
+    background-color: #333 !important;
+    width: 20px !important;
+    height: 2px !important;
+    border-radius: 2px !important;
+  }
+
+  /* Mobile nav dropdown — GoMobileUX sidebar-inspired */
+  .header-area .main-nav .nav {
+    position: fixed !important;
+    top: 0 !important;
+    right: -280px !important;
+    width: 280px !important;
+    height: 100vh !important;
+    background: #fff !important;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.12) !important;
+    z-index: 200 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 80px 20px 40px 20px !important;
+    margin: 0 !important;
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow-y: auto !important;
+  }
+
+  .header-area .main-nav .nav.open {
+    right: 0 !important;
+  }
+
+  .header-area .main-nav .nav li {
+    width: 100% !important;
+    border: none !important;
+    margin-bottom: 4px !important;
+    padding: 0 !important;
+  }
+
+  .header-area .main-nav .nav li a {
+    height: 48px !important;
+    line-height: 48px !important;
+    padding: 0 16px !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    color: #333 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    transition: background-color 0.2s ease !important;
+  }
+
+  .header-area .main-nav .nav li a:hover,
+  .header-area .main-nav .nav li a.active {
+    background: #f5f7fa !important;
+    color: #fe3f40 !important;
+  }
+
+  .header-area .main-nav .nav li:last-child {
+    margin-top: 16px !important;
+    display: block !important;
+  }
+
+  .header-area .main-nav .nav li:last-child a,
+  .header-area .main-nav .nav li:last-child .main-red-button a {
+    background: #fe3f40 !important;
+    color: #fff !important;
+    text-align: center !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    height: 48px !important;
+    line-height: 48px !important;
+  }
+
+  /* Nav overlay when menu is open */
+  .nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 199;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+  }
+
+  .nav-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+
+  /* ── Banner / Hero — Clean Mobile First ── */
+  .main-banner {
+    padding: calc(72px + env(safe-area-inset-top)) 0 40px 0 !important;
+    background: #fff !important;
+  }
+
+  .main-banner:after,
+  .main-banner:before {
+    display: none !important;
+  }
+
+  .main-banner .right-image {
+    display: none !important;
+  }
+
+  .main-banner .left-content {
+    text-align: center !important;
+    padding: 0 20px !important;
+    margin: 0 !important;
+  }
+
+  .main-banner .left-content h6 {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    margin-bottom: 8px !important;
+    color: #fe3f40 !important;
+  }
+
+  .main-banner .left-content h2 {
+    font-size: 26px !important;
+    line-height: 1.3 !important;
+    font-weight: 700 !important;
+    margin-bottom: 14px !important;
+    color: #2a2a2a !important;
+  }
+
+  .main-banner .left-content p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    color: #666 !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* Hide test deployment text on mobile */
+  .main-banner .left-content > p[style*="color: #ff5959"] {
+    display: none !important;
+  }
+
+
+  /* ── Form — GoMobileUX Input Style ── */
+  .main-banner .left-content form {
+    width: 100% !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-top: 20px !important;
+  }
+
+  .main-banner .left-content form fieldset {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .main-banner .left-content form input {
+    width: 100% !important;
+    height: 52px !important;
+    border-radius: 14px !important;
+    background-color: #f5f7fa !important;
+    border: 1px solid #e3eaf1 !important;
+    color: #2a2a2a !important;
+    font-size: 16px !important;
+    padding: 0 18px !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    position: static !important;
+  }
+
+  .main-banner .left-content form input:focus {
+    border-color: #03a4ed !important;
+    box-shadow: 0 0 0 3px rgba(3, 164, 237, 0.12) !important;
+    outline: none !important;
+  }
+
+  .main-banner .left-content form input::placeholder {
+    color: #b0b8c1 !important;
+  }
+
+  .main-banner .left-content form button,
+  .main-banner .left-content form .main-button {
+    width: 100% !important;
+    height: 52px !important;
+    position: static !important;
+    border-radius: 14px !important;
+    background-color: #03a4ed !important;
+    color: #fff !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(3, 164, 237, 0.25) !important;
+    transition: transform 0.15s ease, box-shadow 0.2s ease !important;
+  }
+
+  .main-banner .left-content form button:active {
+    transform: scale(0.97) !important;
+    box-shadow: 0 2px 6px rgba(3, 164, 237, 0.2) !important;
+  }
+
+
+  /* ── Buttons — GoMobileUX Rounded Style ── */
+  .main-red-button a {
+    border-radius: 14px !important;
+    padding: 14px 28px !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 4px 12px rgba(254, 63, 64, 0.25) !important;
+    transition: transform 0.15s ease, box-shadow 0.2s ease !important;
+    display: inline-block !important;
+  }
+
+  .main-red-button a:active {
+    transform: scale(0.97) !important;
+  }
+
+  .main-blue-button a {
+    border-radius: 14px !important;
+    padding: 14px 28px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(3, 164, 237, 0.25) !important;
+    transition: transform 0.15s ease !important;
+  }
+
+  .main-blue-button a:active {
+    transform: scale(0.97) !important;
+  }
+
+
+  /* ── Cards — GoMobileUX Card Pattern ── */
+  .about-us .services .item {
+    border-radius: 15px !important;
+    padding: 20px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  }
+
+  .about-us .services .item:active {
+    transform: scale(0.98) !important;
+  }
+
+  .about-us .left-image {
+    position: relative !important;
+    bottom: auto !important;
+    right: auto !important;
+    max-width: 180px !important;
+    margin: 0 auto 24px auto !important;
+  }
+
+  /* Portfolio cards */
+  .our-portfolio .showed-content {
+    border-radius: 15px !important;
+    padding: 24px 16px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    transition: transform 0.2s ease !important;
+  }
+
+  .our-portfolio .showed-content:active {
+    transform: scale(0.97) !important;
+  }
+
+  .our-portfolio .hidden-content {
+    border-radius: 15px !important;
+  }
+
+  /* Client logo cards */
+  .past-clients .item > div {
+    border-radius: 15px !important;
+  }
+
+
+  /* ── Sections — Consistent Spacing ── */
+  .about-us {
+    padding: 40px 0 !important;
+  }
+
+  .our-services {
+    padding-top: 40px !important;
+    margin-top: 0 !important;
+  }
+
+  .our-services .left-image {
+    max-width: 260px !important;
+    margin: 0 auto 24px auto !important;
+  }
+
+  .our-portfolio {
+    padding-top: 40px !important;
+  }
+
+  .our-portfolio .section-heading h2 {
+    margin-bottom: 40px !important;
+  }
+
+  .our-blog {
+    padding-top: 40px !important;
+    margin-top: 0 !important;
+  }
+
+  .our-blog .left-image .info .inner-content {
+    margin-top: -30px !important;
+    padding: 20px !important;
+    border-radius: 15px !important;
+  }
+
+  .past-clients {
+    padding: 40px 0 !important;
+  }
+
+  /* Get Started section */
+  #get-started {
+    padding: 50px 0 !important;
+  }
+
+  #get-started .col-lg-4,
+  #get-started .col-md-6,
+  #get-started .col-md-12 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  #get-started > .container > .row:first-child .col-lg-8 h2 {
+    font-size: 22px !important;
+  }
+
+  #get-started [style*="border-radius:20px"] {
+    border-radius: 15px !important;
+  }
+
+
+  /* ── Contact Form — GoMobileUX Form Style ── */
+  .contact-us {
+    padding: 50px 0 !important;
+  }
+
+  .contact-us .section-heading {
+    text-align: center !important;
+  }
+
+  form#contact {
+    margin: 20px 0 0 0 !important;
+    padding: 24px 20px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+  }
+
+  form#contact input {
+    border-radius: 12px !important;
+    background-color: #f5f7fa !important;
+    border: 1px solid #e3eaf1 !important;
+    height: 48px !important;
+    font-size: 16px !important;
+    transition: border-color 0.2s ease !important;
+  }
+
+  form#contact input:focus {
+    border-color: #03a4ed !important;
+    box-shadow: 0 0 0 3px rgba(3, 164, 237, 0.12) !important;
+    background-color: #fff !important;
+  }
+
+  form#contact textarea {
+    border-radius: 12px !important;
+    background-color: #f5f7fa !important;
+    border: 1px solid #e3eaf1 !important;
+    font-size: 16px !important;
+    padding: 14px 18px !important;
+  }
+
+  form#contact textarea:focus {
+    border-color: #03a4ed !important;
+    box-shadow: 0 0 0 3px rgba(3, 164, 237, 0.12) !important;
+    background-color: #fff !important;
+  }
+
+  form#contact button {
+    border-radius: 14px !important;
+    height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    box-shadow: 0 4px 12px rgba(3, 164, 237, 0.25) !important;
+    transition: transform 0.15s ease !important;
+    width: 100% !important;
+  }
+
+  form#contact button:active {
+    transform: scale(0.97) !important;
+  }
+
+  form#contact .contact-dec {
+    display: none !important;
+  }
+
+  .phone-info h4 {
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+  }
+
+
+  /* ── Bottom Sticky CTA — GoMobileUX Footer Nav Pattern ── */
+  .mobile-sticky-cta {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 99 !important;
+    background: #fff !important;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .mobile-sticky-cta a {
+    display: block !important;
+    width: 100% !important;
+    background: #fe3f40 !important;
+    color: #fff !important;
+    text-align: center !important;
+    padding: 14px 20px !important;
+    border-radius: 14px !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    box-shadow: 0 4px 12px rgba(254, 63, 64, 0.3) !important;
+    transition: transform 0.15s ease !important;
+  }
+
+  .mobile-sticky-cta a:active {
+    transform: scale(0.97) !important;
+  }
+
+
+  /* ── Modals — GoMobileUX Bottom Sheet Style ── */
+  .modal .modal-dialog {
+    margin: 0 !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    min-height: 100vh !important;
+  }
+
+  .modal .modal-content {
+    border-radius: 20px 20px 0 0 !important;
+    border: none !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+
+  .modal .modal-header {
+    padding: 20px 24px !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+  }
+
+  .modal .modal-header::before {
+    content: '' !important;
+    display: block !important;
+    width: 36px !important;
+    height: 4px !important;
+    background: #ddd !important;
+    border-radius: 2px !important;
+    position: absolute !important;
+    top: 8px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .modal .modal-body {
+    padding: 20px 24px !important;
+  }
+
+  .modal .modal-body .btn {
+    border-radius: 14px !important;
+    height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    transition: transform 0.15s ease !important;
+  }
+
+  .modal .modal-body .btn:active {
+    transform: scale(0.97) !important;
+  }
+
+  .modal .modal-body .form-control {
+    border-radius: 12px !important;
+    height: 48px !important;
+    font-size: 16px !important;
+    background-color: #f5f7fa !important;
+    border: 1px solid #e3eaf1 !important;
+    transition: border-color 0.2s ease !important;
+  }
+
+  .modal .modal-body .form-control:focus {
+    border-color: #1e3c72 !important;
+    box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1) !important;
+    background-color: #fff !important;
+  }
+
+  /* Scheduler steps — GoMobileUX step indicator */
+  .sched-step {
+    font-size: 12px !important;
+    gap: 4px !important;
+  }
+
+  .sched-step span {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 11px !important;
+  }
+
+  /* Calendar & time slots */
+  #time-slots-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .time-slot-btn {
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    padding: 12px 4px !important;
+    transition: all 0.15s ease !important;
+  }
+
+  .cal-day {
+    border-radius: 12px !important;
+    transition: all 0.15s ease !important;
+  }
+
+
+  /* ── Audit Results — Card Pattern ── */
+  .audit-card {
+    border-radius: 15px !important;
+    padding: 20px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    margin-bottom: 16px !important;
+  }
+
+
+  /* ── Footer ── */
+  footer {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+  }
+
+  footer p {
+    font-size: 13px !important;
+  }
+
+
+  /* ── Blog Section Clean-up ── */
+  .our-blog .top-dec {
+    display: none !important;
+  }
+
+  .our-blog .right-list {
+    margin-left: 0 !important;
+  }
+
+
+  /* ── Smooth Transitions — GoMobileUX Pattern ── */
+  .section,
+  .about-us,
+  .our-services,
+  .our-portfolio,
+  .our-blog,
+  .contact-us {
+    transition: opacity 0.3s ease !important;
+  }
+
+
+  /* ── Progress Bars — Rounded GoMobileUX Style ── */
+  .our-services .progress-skill-bar .full-bar,
+  .our-services .progress-skill-bar .filled-bar {
+    border-radius: 6px !important;
+    height: 8px !important;
+  }
+
+
+  /* ── Utilities ── */
+  .container {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  /* Prevent horizontal overflow */
+  .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .col-12, .col-sm-6, .col-md-6, .col-lg-3, .col-lg-4, .col-lg-6, .col-lg-8, .col-lg-12 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+
+/* ── Extra Small (iPhone SE, etc.) ── */
+@media (max-width: 375px) {
+  .main-banner .left-content h2 {
+    font-size: 22px !important;
+  }
+
+  .main-banner .left-content p {
+    font-size: 13px !important;
+  }
+
+  .main-banner .left-content form input,
+  .main-banner .left-content form button {
+    height: 48px !important;
+    font-size: 15px !important;
+  }
+
+  .mobile-sticky-cta a {
+    font-size: 14px !important;
+    padding: 12px 16px !important;
+  }
+
+  #get-started > .container > .row:first-child .col-lg-8 h2 {
+    font-size: 20px !important;
+  }
+}
