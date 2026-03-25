@@ -106,6 +106,7 @@
         <li><a href="#" data-view="overview" class="active"><i class="fa fa-home"></i> <span>Overview</span></a></li>
         <li><a href="#" data-view="consultations"><i class="fa fa-calendar"></i> <span>Consultations</span></a></li>
         <li id="nav-payments" style="display:none;"><a href="#" data-view="payments"><i class="fa fa-credit-card"></i> <span>Payments</span></a></li>
+        <li id="nav-demo" style="display:none;"><a href="#" data-view="demo"><i class="fa fa-eye"></i> <span>Service Preview</span></a></li>
         <li><a href="#" data-view="profile"><i class="fa fa-user"></i> <span>My Profile</span></a></li>
       </ul>
       <div class="sidebar-bottom">
@@ -257,6 +258,19 @@
               </form>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── Service Preview View ── -->
+      <div id="view-demo" class="view-section">
+        <div class="panel-card" style="text-align:center;padding:50px 30px;">
+          <div style="font-size:56px;margin-bottom:15px;"><i class="fa fa-eye" style="color:#17a2b8;"></i></div>
+          <h3 style="font-weight:700;color:#1e3c72;margin-bottom:10px;">Your Website Preview</h3>
+          <p style="color:#666;font-size:15px;margin-bottom:25px;">Your custom website demo is ready for review. Click below to view it in a new tab.</p>
+          <a id="demo-preview-link" href="#" target="_blank" class="btn" style="background:#17a2b8;color:#fff;font-weight:600;border-radius:10px;padding:14px 40px;font-size:16px;border:none;">
+            <i class="fa fa-external-link"></i> View Demo
+          </a>
+          <p style="color:#aaa;font-size:13px;margin-top:20px;">Have feedback? <a href="#" onclick="switchView('consultations');return false;" style="color:#1e3c72;">Book a consultation</a> to discuss changes.</p>
         </div>
       </div>
 
@@ -480,7 +494,7 @@
   <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script>
   (function() {
-    var API = 'http://127.0.0.1:5000/api';
+    var API = (location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? 'http://127.0.0.1:5000/api' : location.origin + '/api';
     var token = localStorage.getItem('es_token');
     var user = null;
     try { user = JSON.parse(localStorage.getItem('es_user')); } catch(e) {}
@@ -546,6 +560,12 @@
     .then(function(data) {
       if (data && data.user && data.user.payment_portal) {
         document.getElementById('nav-payments').style.display = '';
+      }
+      if (data && data.user && data.user.demo_preview && data.user.demo_preview_site) {
+        document.getElementById('nav-demo').style.display = '';
+        var subpath = data.user.demo_has_dist ? data.user.demo_preview_site + '/dist/index.html' : data.user.demo_preview_site + '/index.html';
+        var rawUrl = 'http://127.0.0.1:8080/websitepreviews/' + subpath;
+        document.getElementById('demo-preview-link').href = 'preview-viewer.html?url=' + encodeURIComponent(rawUrl);
       }
     });
 
@@ -1032,22 +1052,50 @@
     // ── Handle Stripe return ──
     var urlParams = new URLSearchParams(window.location.search);
     var paymentResult = urlParams.get('payment');
-    if (paymentResult) {
+    var deployPayment = urlParams.get('deploy_payment');
+    var deploySessionId = urlParams.get('session_id');
+    if (paymentResult || deployPayment) {
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
-      // Wait for nav-payments to appear, then switch
-      setTimeout(function() {
-        if (document.getElementById('nav-payments').style.display !== 'none') {
-          switchView('payments');
+
+      if (deployPayment === 'success') {
+        // Confirm payment with backend (fallback for when Stripe webhook can't reach server)
+        if (deploySessionId) {
+          fetch(API + '/deploy-payment-status?session_id=' + encodeURIComponent(deploySessionId), {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }).catch(function() {});
         }
-        if (paymentResult === 'success') {
-          var payType = urlParams.get('type');
-          var msg = payType === 'monthly' ? 'Monthly payments activated!' : 'Payment successful!';
-          alert(msg + ' Your payment has been processed via Stripe.');
-        } else if (paymentResult === 'cancel') {
-          alert('Payment was cancelled. You can try again anytime.');
-        }
-      }, 800);
+        setTimeout(function() {
+          var banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#28a745,#20c997);color:#fff;padding:18px 32px;border-radius:14px;font-size:15px;box-shadow:0 8px 32px rgba(40,167,69,.3);display:flex;align-items:center;gap:12px;max-width:520px;animation:slideDown .4s ease;';
+          banner.innerHTML = '<i class="fa fa-check-circle" style="font-size:22px;"></i><div><strong>Deploy payment confirmed!</strong><br><span style="font-size:13px;opacity:.9;">Your deploy request has been submitted and our team has been notified.</span></div>';
+          document.body.appendChild(banner);
+          setTimeout(function() { banner.style.opacity = '0'; banner.style.transition = 'opacity .5s'; setTimeout(function() { banner.remove(); }, 600); }, 5000);
+        }, 600);
+      } else if (deployPayment === 'cancel') {
+        setTimeout(function() {
+          var banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;background:#f8d7da;color:#721c24;padding:18px 32px;border-radius:14px;font-size:15px;box-shadow:0 8px 32px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px;max-width:520px;';
+          banner.innerHTML = '<i class="fa fa-times-circle" style="font-size:22px;"></i><div><strong>Payment cancelled</strong><br><span style="font-size:13px;">Your deploy request was not submitted. You can try again from the preview page.</span></div>';
+          document.body.appendChild(banner);
+          setTimeout(function() { banner.style.opacity = '0'; banner.style.transition = 'opacity .5s'; setTimeout(function() { banner.remove(); }, 600); }, 5000);
+        }, 600);
+      }
+
+      if (paymentResult) {
+        setTimeout(function() {
+          if (document.getElementById('nav-payments').style.display !== 'none') {
+            switchView('payments');
+          }
+          if (paymentResult === 'success') {
+            var payType = urlParams.get('type');
+            var msg = payType === 'monthly' ? 'Monthly payments activated!' : 'Payment successful!';
+            alert(msg + ' Your payment has been processed via Stripe.');
+          } else if (paymentResult === 'cancel') {
+            alert('Payment was cancelled. You can try again anytime.');
+          }
+        }, 800);
+      }
     }
   })();
   </script>

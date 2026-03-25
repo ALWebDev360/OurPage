@@ -704,6 +704,29 @@ https://templatemo.com/tm-562-space-dynamic
             <h6 style="font-weight:700;color:#1e3c72;margin-bottom:15px;padding-top:15px;border-top:1px solid #eee;">Your Upcoming Consultations</h6>
             <div id="consultations-list"></div>
           </div>
+
+          <div id="skip-schedule" style="text-align:center;margin-top:18px;display:none;">
+            <a href="#" data-bs-dismiss="modal" style="color:#888;font-size:13px;text-decoration:none;font-weight:500;">I've already had a consultation &mdash; skip for now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit CTA Modal -->
+  <div class="modal fade" id="auditCtaModal" tabindex="-1" aria-labelledby="auditCtaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:20px;border:none;overflow:hidden;text-align:center;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#1e3c72,#2a5298);border:none;padding:25px 30px;justify-content:center;position:relative;">
+          <h5 class="modal-title" id="auditCtaModalLabel" style="color:#fff;font-weight:700;">Your Audit Is Ready!</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);"></button>
+        </div>
+        <div class="modal-body" style="padding:40px 30px;">
+          <div style="font-size:48px;margin-bottom:15px;"><i class="fa fa-chart-line" style="color:#1e3c72;"></i></div>
+          <h4 style="font-weight:700;color:#2a2a2a;margin-bottom:10px;">Ready to Improve Your Website's Performance?</h4>
+          <p style="color:#666;font-size:15px;margin-bottom:25px;">Our experts can help you act on these insights and boost your rankings, speed, and security.</p>
+          <button type="button" id="cta-book-btn" class="btn w-100" style="background:#ff5959;color:#fff;font-weight:600;border-radius:10px;padding:14px;border:none;font-size:16px;margin-bottom:10px;">Book a Free Consultation</button>
+          <button type="button" class="btn btn-link" data-bs-dismiss="modal" style="color:#888;font-size:14px;text-decoration:none;">I'll review my results first</button>
         </div>
       </div>
     </div>
@@ -805,7 +828,7 @@ https://templatemo.com/tm-562-space-dynamic
   <!-- SEO Audit Script -->
   <script>
   (function() {
-    var API_URL = 'http://127.0.0.1:5000/api/audit';
+    var API_URL = ((location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? 'http://127.0.0.1:5000/api' : location.origin + '/api') + '/audit';
     var form = document.getElementById('audit-form');
     var btn  = document.getElementById('audit-btn');
     var resultsSection = document.getElementById('audit-results');
@@ -851,6 +874,11 @@ https://templatemo.com/tm-562-space-dynamic
         renderHeaders(data.headers);
         renderImages(data.images);
         renderLinks(data.links);
+        // Show CTA modal after a short delay so user sees results first
+        setTimeout(function() {
+          var ctaModal = new bootstrap.Modal(document.getElementById('auditCtaModal'));
+          ctaModal.show();
+        }, 2000);
       })
       .catch(function(err) {
         showError('Could not connect to audit server. Make sure it is running on port 5000.');
@@ -858,6 +886,24 @@ https://templatemo.com/tm-562-space-dynamic
       .finally(function() {
         btn.disabled = false;
         btn.textContent = 'Free Audit';
+      });
+    });
+
+    // CTA modal: "Book a Consultation" — check auth first
+    document.getElementById('cta-book-btn').addEventListener('click', function() {
+      bootstrap.Modal.getInstance(document.getElementById('auditCtaModal')).hide();
+      document.getElementById('auditCtaModal').addEventListener('hidden.bs.modal', function handler() {
+        this.removeEventListener('hidden.bs.modal', handler);
+        // If logged in, go straight to scheduling; otherwise open auth modal
+        if (localStorage.getItem('es_token')) {
+          if (typeof openScheduleModal === 'function') {
+            openScheduleModal();
+          } else {
+            new bootstrap.Modal(document.getElementById('scheduleModal')).show();
+          }
+        } else {
+          new bootstrap.Modal(document.getElementById('authModal')).show();
+        }
       });
     });
 
@@ -1104,7 +1150,7 @@ https://templatemo.com/tm-562-space-dynamic
   <!-- Auth & Scheduling Script -->
   <script>
   (function() {
-    var API = 'http://127.0.0.1:5000/api';
+    var API = (location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? 'http://127.0.0.1:5000/api' : location.origin + '/api';
 
     // ── State ──
     function getToken() { return localStorage.getItem('es_token'); }
@@ -1218,6 +1264,8 @@ https://templatemo.com/tm-562-space-dynamic
           authModal.hide();
           signupForm.reset();
           openScheduleModal();
+          var skipEl = document.getElementById('skip-schedule');
+          if (skipEl) skipEl.style.display = 'block';
         }, 1200);
       })
       .catch(function() { showAuthAlert('Could not connect to server', true); })
@@ -1378,6 +1426,8 @@ https://templatemo.com/tm-562-space-dynamic
       var token = getToken();
       var user = getUser();
       if (!token) { authAlert.style.display = 'none'; authModal.show(); return; }
+      var skipEl = document.getElementById('skip-schedule');
+      if (skipEl) skipEl.style.display = 'none';
       var infoDiv = document.getElementById('schedule-user-info');
       var nameSpan = document.getElementById('schedule-user-name');
       infoDiv.style.display = 'block';

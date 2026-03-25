@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website Preview — Elevated Solutions</title>
+<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/fontawesome.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { overflow: hidden; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+  /* Preview iframe fills screen */
+  #preview-frame { width: 100%; height: 100vh; border: none; display: block; }
+
+  /* Bottom overlay bar */
+  #overlay-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+    gap: 12px; flex-wrap: wrap;
+    transform: translateY(100%);
+    animation: slideUp 0.5s ease 0.8s forwards;
+  }
+  @keyframes slideUp { to { transform: translateY(0); } }
+
+  #overlay-bar .bar-left {
+    display: flex; align-items: center; gap: 14px;
+  }
+  #overlay-bar .bar-left img { height: 28px; }
+  #overlay-bar .bar-text { font-size: 15px; font-weight: 500; }
+  #overlay-bar .bar-text strong { font-weight: 700; }
+
+  #overlay-bar .bar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .bar-btn {
+    border: none; border-radius: 10px; padding: 10px 22px; font-weight: 600;
+    font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .bar-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+  .btn-deploy { background: #28a745; color: #fff; }
+  .btn-revision { background: #fff; color: #1e3c72; }
+  .btn-back { background: rgba(255,255,255,0.15); color: #fff; font-size: 13px; padding: 8px 16px; }
+
+  /* Minimize toggle */
+  #overlay-toggle {
+    position: fixed; bottom: 12px; right: 12px; z-index: 10000;
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff;
+    font-size: 18px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: none; transition: transform 0.15s;
+  }
+  #overlay-toggle:hover { transform: scale(1.1); }
+
+  /* Revision modal overlay */
+  .rev-overlay {
+    position: fixed; inset: 0; z-index: 10001;
+    background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .rev-overlay.open { opacity: 1; pointer-events: auto; }
+  .rev-card {
+    background: #fff; border-radius: 20px; width: 90%; max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+    transform: translateY(30px); transition: transform 0.3s;
+  }
+  .rev-overlay.open .rev-card { transform: translateY(0); }
+  .rev-header {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; padding: 22px 25px;
+  }
+  .rev-header h5 { margin: 0; font-weight: 700; font-size: 18px; }
+  .rev-header p { margin: 4px 0 0; font-size: 13px; opacity: 0.8; }
+  .rev-body { padding: 25px; }
+  .rev-body label { font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px; }
+  .rev-body input, .rev-body textarea, .rev-body select {
+    width: 100%; border: 1px solid #ddd; border-radius: 10px; padding: 10px 14px;
+    font-size: 14px; font-family: inherit; margin-bottom: 16px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .rev-body input:focus, .rev-body textarea:focus, .rev-body select:focus { border-color: #1e3c72; }
+  .rev-body textarea { resize: vertical; min-height: 100px; }
+  .rev-alert {
+    display: none; padding: 10px 14px; border-radius: 10px;
+    margin-bottom: 14px; font-size: 13px; font-weight: 500;
+  }
+  .rev-actions { display: flex; gap: 10px; }
+  .rev-actions button { flex: 1; }
+  .rev-btn-send {
+    border: none; border-radius: 10px; padding: 12px; font-weight: 600;
+    font-size: 15px; cursor: pointer; background: #ff5959; color: #fff;
+  }
+  .rev-btn-cancel {
+    border: 1px solid #ddd; border-radius: 10px; padding: 12px; font-weight: 600;
+    font-size: 15px; cursor: pointer; background: #fff; color: #666;
+  }
+
+  /* Deploy configuration modal */
+  .deploy-overlay {
+    position: fixed; inset: 0; z-index: 10001;
+    background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .deploy-overlay.open { opacity: 1; pointer-events: auto; }
+  .deploy-card {
+    background: #fff; border-radius: 20px; width: 94%; max-width: 580px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+    transform: translateY(30px); transition: transform 0.3s;
+    max-height: 92vh; display: flex; flex-direction: column;
+  }
+  .deploy-overlay.open .deploy-card { transform: translateY(0); }
+  .deploy-head {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; padding: 22px 28px; flex-shrink: 0;
+  }
+  .deploy-head h4 { margin: 0; font-weight: 700; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  .deploy-head p { margin: 6px 0 0; font-size: 13px; opacity: 0.8; }
+  .deploy-body { padding: 24px 28px; overflow-y: auto; flex: 1; }
+  .deploy-body label { font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px; color: #333; }
+  .deploy-body input, .deploy-body select {
+    width: 100%; border: 1px solid #ddd; border-radius: 10px; padding: 10px 14px;
+    font-size: 14px; font-family: inherit; margin-bottom: 18px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .deploy-body input:focus, .deploy-body select:focus { border-color: #1e3c72; }
+  .deploy-body .hint { font-size: 12px; color: #999; margin-top: -14px; margin-bottom: 16px; }
+
+  /* Addons */
+  .addon-list { margin-bottom: 20px; }
+  .addon-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    border: 2px solid #eee; border-radius: 12px; margin-bottom: 8px;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .addon-item:hover { border-color: #c0cfe0; }
+  .addon-item.selected { border-color: #1e3c72; background: #f0f5ff; }
+  .addon-item .addon-check {
+    width: 22px; height: 22px; border-radius: 6px; border: 2px solid #ccc;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: transparent; transition: all 0.15s; flex-shrink: 0;
+  }
+  .addon-item.selected .addon-check { background: #1e3c72; border-color: #1e3c72; color: #fff; }
+  .addon-item .addon-info { flex: 1; }
+  .addon-item .addon-name { font-weight: 600; font-size: 14px; color: #333; }
+  .addon-item .addon-desc { font-size: 12px; color: #888; margin-top: 2px; }
+  .addon-item .addon-price { font-weight: 700; font-size: 15px; color: #1e3c72; white-space: nowrap; }
+
+  /* Coupon section */
+  .coupon-section { margin-bottom: 20px; }
+  .coupon-input-wrap {
+    display: flex; gap: 8px;
+  }
+  .coupon-input-wrap input {
+    flex: 1; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 10px;
+    font-size: 14px; text-transform: uppercase; letter-spacing: 1px;
+    transition: border-color 0.2s;
+  }
+  .coupon-input-wrap input:focus { border-color: #1e3c72; outline: none; }
+  .coupon-input-wrap button {
+    padding: 10px 20px; background: #1e3c72; color: #fff; border: none; border-radius: 10px;
+    font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s; white-space: nowrap;
+  }
+  .coupon-input-wrap button:hover { background: #16305e; }
+  .coupon-input-wrap button:disabled { background: #aaa; cursor: not-allowed; }
+  .coupon-status {
+    margin-top: 8px; padding: 8px 14px; border-radius: 8px; font-size: 13px;
+  }
+  .coupon-status.success { background: #d4edda; color: #155724; }
+  .coupon-status.error { background: #f8d7da; color: #721c24; }
+  .coupon-applied-badge {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
+    background: #e8f5e9; border: 1px solid #81c784; border-radius: 20px;
+    font-size: 13px; font-weight: 600; color: #2e7d32;
+  }
+  .coupon-applied-badge .coupon-remove {
+    background: none; border: none; color: #c62828; cursor: pointer; font-size: 14px; padding: 0 2px;
+  }
+  .discount-row .value { font-weight: 600; }
+
+  /* Price summary */
+  .price-summary {
+    background: #f7f9fc; border-radius: 14px; padding: 18px 20px; margin-bottom: 20px;
+  }
+  .price-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; font-size: 14px; color: #555;
+  }
+  .price-row.total {
+    border-top: 2px solid #e0e5ed; margin-top: 8px; padding-top: 12px;
+    font-size: 18px; font-weight: 700; color: #1e3c72;
+  }
+  .price-row .label { font-weight: 500; }
+  .price-row .value { font-weight: 600; }
+  .monthly-note {
+    text-align: center; font-size: 13px; color: #888; margin-bottom: 18px;
+    padding: 10px 14px; background: #eef3fb; border-radius: 10px;
+  }
+  .monthly-note strong { color: #1e3c72; }
+
+  /* Deploy actions */
+  .deploy-foot { padding: 0 28px 24px; flex-shrink: 0; }
+  .deploy-alert { display: none; padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
+  .deploy-btns { display: flex; gap: 10px; }
+  .deploy-btns button { flex: 1; border: none; border-radius: 10px; padding: 13px; font-weight: 600; font-size: 15px; cursor: pointer; }
+  .btn-deploy-confirm { background: #28a745; color: #fff; }
+  .btn-deploy-cancel { background: #f0f0f0; color: #666; }
+
+  /* Domain search bar */
+  .domain-search-wrap {
+    display: flex; gap: 8px; margin-bottom: 14px;
+  }
+  .domain-search-wrap input {
+    flex: 1; margin-bottom: 0 !important;
+  }
+  .domain-search-wrap button {
+    border: none; border-radius: 10px; padding: 10px 20px; font-weight: 600;
+    font-size: 14px; background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff;
+    cursor: pointer; white-space: nowrap; transition: opacity 0.15s;
+  }
+  .domain-search-wrap button:hover { opacity: 0.9; }
+
+  /* TLD grid */
+  .tld-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; margin-bottom: 20px; max-height: 300px; overflow-y: auto;
+    padding: 4px 2px;
+  }
+  .tld-card {
+    display: flex; align-items: center; justify-content: space-between;
+    border: 2px solid #eee; border-radius: 12px; padding: 12px 14px;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    user-select: none;
+  }
+  .tld-card:hover { border-color: #c0cfe0; transform: translateY(-1px); }
+  .tld-card.selected { border-color: #1e3c72; background: #f0f5ff; }
+  .tld-card.taken { opacity: 0.45; cursor: not-allowed; border-color: #f0f0f0; background: #fafafa; }
+  .tld-card.taken:hover { transform: none; border-color: #f0f0f0; }
+  .tld-card.aftermarket { border-color: #f0e6d0; background: #fffaf3; cursor: pointer; }
+  .tld-card.aftermarket:hover { border-color: #e0c890; }
+  .tld-card.checking { opacity: 0.7; }
+  .tld-card .tld-status {
+    font-size: 14px; flex-shrink: 0; margin-left: 6px;
+  }
+  .tld-card .tld-status.avail { color: #28a745; }
+  .tld-card .tld-status.unavail { color: #dc3545; }
+  .tld-card .tld-status.aftermarket { color: #e6a817; }
+  .tld-card .tld-aftermarket-badge { display: inline-block; font-size: 9px; font-weight: 700; color: #fff; background: #e6a817; padding: 1px 5px; border-radius: 4px; margin-left: 4px; vertical-align: middle; letter-spacing: 0.3px; }
+  .tld-card .tld-status.loading { color: #6c757d; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .tld-card .tld-left { display: flex; flex-direction: column; }
+  .tld-card .tld-domain {
+    font-weight: 700; font-size: 14px; color: #333;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 220px;
+  }
+  .tld-card .tld-ext { font-weight: 600; color: #1e3c72; }
+  .tld-card .tld-price { font-weight: 700; font-size: 15px; color: #28a745; white-space: nowrap; }
+  .tld-card.selected .tld-price { color: #1e3c72; }
+  .tld-card .tld-yr { font-size: 11px; color: #888; font-weight: 400; }
+  .tld-card .tld-was { font-size: 12px; color: #999; text-decoration: line-through; margin-right: 4px; font-weight: 400; }
+  .tld-card .tld-sale-badge { display: inline-block; font-size: 9px; font-weight: 700; color: #fff; background: #dc3545; padding: 1px 5px; border-radius: 4px; margin-left: 4px; vertical-align: middle; letter-spacing: 0.3px; }
+  .tld-card .tld-premium-badge { display: inline-block; font-size: 9px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #7b2ff7, #c471ed); padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; letter-spacing: 0.3px; }
+  .tld-card .tld-renew { font-size: 10px; color: #999; font-weight: 400; white-space: nowrap; }
+
+  .tld-empty {
+    text-align: center; padding: 20px; color: #aaa; font-size: 13px;
+    grid-column: 1 / -1;
+  }
+  .tld-selected-badge {
+    display: none; margin-bottom: 16px; padding: 10px 14px;
+    background: #eef3fb; border-radius: 10px; font-size: 14px; color: #333;
+  }
+  .tld-selected-badge.visible { display: flex; align-items: center; justify-content: space-between; }
+  .tld-selected-badge strong { color: #1e3c72; }
+  .tld-selected-badge .tld-clear {
+    background: none; border: none; color: #dc3545; font-size: 13px; cursor: pointer; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Preview Iframe -->
+  <iframe id="preview-frame" src="about:blank"></iframe>
+
+  <!-- Bottom Overlay Bar -->
+  <div id="overlay-bar">
+    <div class="bar-left">
+      <div class="bar-text">
+        <strong>Preview Mode</strong> — Like what you see?
+      </div>
+    </div>
+    <div class="bar-actions">
+      <button class="bar-btn btn-deploy" onclick="openDeploy()"><i class="fa fa-rocket"></i> Ready to Deploy Live</button>
+      <button class="bar-btn btn-revision" onclick="openRevision()"><i class="fa fa-pencil"></i> Request Revisions</button>
+      <button class="bar-btn btn-back" onclick="goBack()"><i class="fa fa-arrow-left"></i> Dashboard</button>
+      <button class="bar-btn btn-back" onclick="toggleBar()" style="padding:8px 12px;" title="Minimize"><i class="fa fa-chevron-down"></i></button>
+    </div>
+  </div>
+
+  <!-- Minimize toggle button -->
+  <button id="overlay-toggle" onclick="toggleBar()" title="Show toolbar"><i class="fa fa-chevron-up"></i></button>
+
+  <!-- Revision Request Modal -->
+  <div class="rev-overlay" id="revisionModal">
+    <div class="rev-card">
+      <div class="rev-header">
+        <h5><i class="fa fa-pencil"></i> Request Revisions</h5>
+        <p>Tell us what changes you'd like made to your website</p>
+      </div>
+      <div class="rev-body">
+        <div class="rev-alert" id="rev-alert"></div>
+        <label>Category</label>
+        <select id="rev-category">
+          <option value="revision">Design / Content Revision</option>
+          <option value="bug">Bug or Issue</option>
+          <option value="other">Other</option>
+        </select>
+        <label>Subject</label>
+        <input type="text" id="rev-subject" placeholder="e.g., Change hero section colors" maxlength="200">
+        <label>Describe the changes you'd like</label>
+        <textarea id="rev-body" placeholder="Be as specific as possible — mention sections, pages, colors, text, etc." maxlength="5000"></textarea>
+        <div class="rev-actions">
+          <button class="rev-btn-cancel" onclick="closeRevision()">Cancel</button>
+          <button class="rev-btn-send" id="rev-send-btn" onclick="sendRevision()"><i class="fa fa-paper-plane"></i> Send Request</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deploy Configuration Modal -->
+  <div class="deploy-overlay" id="deployModal">
+    <div class="deploy-card">
+      <div class="deploy-head">
+        <h4><i class="fa fa-rocket"></i> Deploy Your Website</h4>
+        <p>Choose your domain, add features, and review your pricing</p>
+      </div>
+      <div class="deploy-body">
+        <div class="deploy-alert" id="deploy-alert"></div>
+
+        <label><i class="fa fa-globe" style="margin-right:6px;color:#1e3c72;"></i> Domain Name</label>
+        <div class="domain-search-wrap">
+          <input type="text" id="deploy-domain-search" placeholder="Search for a domain name (e.g., mybusiness)" maxlength="100">
+          <button type="button" onclick="searchDomains()"><i class="fa fa-search"></i> Search</button>
+        </div>
+        <div class="tld-selected-badge" id="tld-selected-badge">
+          <span><i class="fa fa-check-circle" style="color:#28a745;margin-right:6px;"></i> Selected: <strong id="tld-selected-name"></strong></span>
+          <button class="tld-clear" onclick="clearDomainSelection()"><i class="fa fa-times"></i> Change</button>
+        </div>
+        <div class="tld-grid" id="tld-grid">
+          <div class="tld-empty">Type a domain name above and click Search to see available extensions with pricing.</div>
+        </div>
+
+        <label><i class="fa fa-plus-circle" style="margin-right:6px;color:#1e3c72;"></i> Additional Features</label>
+        <div class="addon-list" id="addon-list">
+          <div style="text-align:center;padding:20px;color:#aaa;font-size:13px;">Loading options...</div>
+        </div>
+
+        <div class="coupon-section" id="coupon-section">
+          <label><i class="fa fa-tag" style="margin-right:6px;color:#1e3c72;"></i> Have a coupon?</label>
+          <div class="coupon-input-wrap">
+            <input type="text" id="coupon-input" placeholder="Enter coupon code" maxlength="50">
+            <button type="button" id="coupon-apply-btn" onclick="applyCoupon()">Apply</button>
+          </div>
+          <div class="coupon-status" id="coupon-status" style="display:none;"></div>
+        </div>
+
+        <div class="price-summary" id="price-summary">
+          <div class="price-row"><span class="label">Deployment &amp; Setup Fee</span><span class="value" id="price-base">$0.00</span></div>
+          <div class="price-row" id="price-domain-row" style="display:none;"><span class="label">Domain Registration <span id="price-domain-name"></span></span><span class="value" id="price-domain">$0.00</span></div>
+          <div id="price-addon-rows"></div>
+          <div class="price-row discount-row" id="price-discount-row" style="display:none;"><span class="label">Coupon Discount <span id="price-discount-label"></span></span><span class="value" id="price-discount" style="color:#28a745;">-$0.00</span></div>
+          <div class="price-row"><span class="label">Subtotal</span><span class="value" id="price-subtotal">$0.00</span></div>
+          <div class="price-row"><span class="label">Tax (<span id="price-tax-rate">0</span>%)</span><span class="value" id="price-tax">$0.00</span></div>
+          <div class="price-row total"><span class="label">Total Due</span><span class="value" id="price-total">$0.00</span></div>
+        </div>
+        <div class="monthly-note">
+          <i class="fa fa-refresh"></i> Monthly Maintenance: <strong id="price-monthly">$0.00</strong>/mo
+          <span id="price-monthly-breakdown" style="display:none;font-size:11px;color:#aaa;"></span>
+          <br><small>Includes hosting, updates, security monitoring, support &amp; domain renewal</small>
+        </div>
+      </div>
+      <div class="deploy-foot">
+        <div class="deploy-btns">
+          <button class="btn-deploy-cancel" onclick="closeDeploy()">Cancel</button>
+          <button class="btn-deploy-confirm" id="deploy-send-btn" onclick="sendDeploy()"><i class="fa fa-credit-card"></i> Pay &amp; Deploy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function() {
+  var API = (location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? 'http://127.0.0.1:5000/api' : location.origin + '/api';
+  var token = localStorage.getItem('es_token');
+  var params = new URLSearchParams(window.location.search);
+  var previewUrl = params.get('url');
+
+  // If no token, redirect to dashboard login
+  if (!token) { window.location.href = 'dashboard.html'; return; }
+
+  // Load preview in iframe
+  if (previewUrl) {
+    document.getElementById('preview-frame').src = previewUrl;
+  }
+
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+  }
+
+  // Toggle bar visibility
+  var barVisible = true;
+  window.toggleBar = function() {
+    barVisible = !barVisible;
+    document.getElementById('overlay-bar').style.transform = barVisible ? 'translateY(0)' : 'translateY(100%)';
+    document.getElementById('overlay-toggle').style.display = barVisible ? 'none' : 'block';
+  };
+
+  // Go back to dashboard
+  window.goBack = function() {
+    window.location.href = 'dashboard.html';
+  };
+
+  // Revision modal
+  window.openRevision = function() {
+    document.getElementById('rev-alert').style.display = 'none';
+    document.getElementById('revisionModal').classList.add('open');
+  };
+  window.closeRevision = function() {
+    document.getElementById('revisionModal').classList.remove('open');
+  };
+
+  window.sendRevision = function() {
+    var body = document.getElementById('rev-body').value.trim();
+    var subject = document.getElementById('rev-subject').value.trim();
+    var category = document.getElementById('rev-category').value;
+    var alert = document.getElementById('rev-alert');
+    var btn = document.getElementById('rev-send-btn');
+
+    if (!body) {
+      alert.textContent = 'Please describe the changes you want.';
+      alert.style.display = 'block';
+      alert.style.background = '#f8d7da';
+      alert.style.color = '#721c24';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    fetch(API + '/messages', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ subject: subject, body: body, category: category })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.ok) {
+        alert.textContent = 'Revision request sent! We\'ll review it shortly.';
+        alert.style.display = 'block';
+        alert.style.background = '#d4edda';
+        alert.style.color = '#155724';
+        document.getElementById('rev-body').value = '';
+        document.getElementById('rev-subject').value = '';
+        setTimeout(closeRevision, 2000);
+      } else {
+        alert.textContent = d.error || 'Failed to send.';
+        alert.style.display = 'block';
+        alert.style.background = '#f8d7da';
+        alert.style.color = '#721c24';
+      }
+    })
+    .catch(function() {
+      alert.textContent = 'Could not connect to server.';
+      alert.style.display = 'block';
+      alert.style.background = '#f8d7da';
+      alert.style.color = '#721c24';
+    })
+    .finally(function() { btn.disabled = false; btn.innerHTML = '<i class="fa fa-paper-plane"></i> Send Request'; });
+  };
+
+  // Deploy modal
+  var deployPricing = { base_fee: 0, monthly_maintenance: 0, tax_rate: 0, addons: [], domain_tlds: [] };
+  var selectedAddons = {};
+  var selectedDomain = null; // { name: 'mybusiness', tld: '.com', price: 12.99 }
+  var appliedCoupon = null; // { code, discount_type, discount_value }
+
+  window.openDeploy = function() {
+    document.getElementById('deploy-alert').style.display = 'none';
+    document.getElementById('deploy-domain-search').value = '';
+    selectedAddons = {};
+    selectedDomain = null;
+    appliedCoupon = null;
+    document.getElementById('coupon-input').value = '';
+    document.getElementById('coupon-input').disabled = false;
+    document.getElementById('coupon-apply-btn').style.display = '';
+    document.getElementById('coupon-status').style.display = 'none';
+    document.getElementById('tld-selected-badge').classList.remove('visible');
+    document.getElementById('tld-grid').innerHTML = '<div class="tld-empty">Type a domain name above and click Search to see available extensions with pricing.</div>';
+    document.getElementById('deployModal').classList.add('open');
+    loadDeployPricing();
+  };
+  window.closeDeploy = function() {
+    document.getElementById('deployModal').classList.remove('open');
+  };
+
+  function loadDeployPricing() {
+    fetch(API + '/me/deploy-pricing', { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.config) {
+        deployPricing = d.config;
+        if (!deployPricing.domain_tlds || !deployPricing.domain_tlds.length) {
+          deployPricing.domain_tlds = [];
+        }
+        renderAddons();
+        recalcPrice();
+      }
+    })
+    .catch(function() {
+      document.getElementById('addon-list').innerHTML = '<div style="text-align:center;padding:12px;color:#999;font-size:13px;">Could not load pricing.</div>';
+    });
+  }
+
+  window.searchDomains = function() {
+    var name = document.getElementById('deploy-domain-search').value.trim().toLowerCase();
+    // Strip any extension the user typed
+    name = name.replace(/\.[a-zA-Z]+$/, '').replace(/[^a-z0-9\-]/g, '');
+    if (!name) {
+      document.getElementById('tld-grid').innerHTML = '<div class="tld-empty">Please enter a domain name to search.</div>';
+      return;
+    }
+    document.getElementById('deploy-domain-search').value = name;
+    // Clear previous selection if keyword changed
+    if (selectedDomain && selectedDomain.name !== name) {
+      clearDomainSelection();
+    }
+    renderTldGrid(name, {});
+    checkAvailability(name);
+  };
+
+  // Also trigger search on Enter key
+  document.getElementById('deploy-domain-search').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); searchDomains(); }
+  });
+
+  var availabilityResults = {}; // { 'domain.com': {available, registration, renewal, is_sale} }
+
+  function checkAvailability(name) {
+    availabilityResults = {};
+    fetch(API + '/domain-availability', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ keyword: name })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.results) {
+        d.results.forEach(function(r) {
+          availabilityResults[r.domain] = {
+            available: r.available,
+            status: r.status,
+            registration: r.registration,
+            regular_price: r.regular_price || r.registration,
+            renewal: r.renewal,
+            is_sale: r.is_sale,
+            is_premium: r.is_premium || false,
+            porkbun_checked: r.porkbun_checked || false,
+            aftermarket_price: r.aftermarket_price || null,
+            aftermarket_buy_now: r.aftermarket_buy_now || false,
+            aftermarket_make_offer: r.aftermarket_make_offer || false,
+            aftermarket_leasing: r.aftermarket_leasing || false
+          };
+        });
+        // Re-render grid with live data
+        var searchVal = document.getElementById('deploy-domain-search').value.trim().toLowerCase();
+        if (searchVal === name) {
+          renderTldGrid(name, availabilityResults);
+        }
+      }
+    })
+    .catch(function() {
+      // Silently fail — grid stays in "checking" state
+    });
+  }
+
+  function renderTldGrid(name, availability) {
+    var tlds = deployPricing.domain_tlds;
+    var grid = document.getElementById('tld-grid');
+    var hasResults = Object.keys(availability).length > 0;
+
+    if (!tlds.length) {
+      grid.innerHTML = '<div class="tld-empty">No domain extensions available. Contact support.</div>';
+      return;
+    }
+
+    grid.innerHTML = tlds.map(function(t, i) {
+      var fullDomain = name + t.tld;
+      var info = availability[fullDomain] || {};
+      var isSelected = selectedDomain && selectedDomain.tld === t.tld && selectedDomain.name === name;
+      var domainStatus = info.status || 'unknown';
+      var isAvailable = domainStatus === 'available';
+      var isAftermarket = domainStatus === 'aftermarket';
+      var isRegistered = domainStatus === 'registered';
+      var isChecking = !hasResults;
+
+      // Use live prices from Porkbun, fall back to configured price
+      var regPrice = info.registration != null ? info.registration : t.price;
+      var regularPrice = info.regular_price != null ? info.regular_price : regPrice;
+      var renewalPrice = info.renewal != null ? info.renewal : t.price;
+      var isSale = info.is_sale || false;
+      var isPremium = info.is_premium || false;
+
+      // Status icon
+      var statusHtml = '';
+      if (isChecking) {
+        statusHtml = '<span class="tld-status loading"><i class="fa fa-spinner"></i></span>';
+      } else if (isAvailable) {
+        statusHtml = '<span class="tld-status avail"><i class="fa fa-check-circle"></i></span>';
+      } else if (isAftermarket) {
+        statusHtml = '<span class="tld-status aftermarket"><i class="fa fa-shopping-cart"></i></span>';
+      } else if (isRegistered) {
+        statusHtml = '<span class="tld-status unavail"><i class="fa fa-times-circle"></i></span>';
+      }
+
+      // Price display — Porkbun style with sale badge + renewal + premium
+      var priceHtml = '';
+      var premiumBadge = isPremium ? '<span class="tld-premium-badge">PREMIUM</span>' : '';
+      if (isChecking) {
+        priceHtml = '<div class="tld-price-wrap"><div class="tld-checking-text" style="font-size:11px;color:#999;font-style:italic;">Gathering domain info…</div></div>';
+      } else if (isAftermarket) {
+        var amPrice = info.aftermarket_price;
+        if (amPrice) {
+          priceHtml = '<div class="tld-price-wrap">' +
+            '<span class="tld-aftermarket-badge">Aftermarket</span>' +
+            '<div class="tld-price" style="color:#e6a817;font-weight:700;">$' + Number(amPrice).toLocaleString() + '</div>' +
+            (info.aftermarket_buy_now ? '<div class="tld-renew" style="color:#28a745;">Buy Now</div>' :
+             info.aftermarket_make_offer ? '<div class="tld-renew">Make Offer</div>' : '') +
+            '</div>';
+        } else {
+          priceHtml = '<div class="tld-price-wrap">' +
+            '<span class="tld-aftermarket-badge">Aftermarket</span>' +
+            '<div class="tld-price" style="color:#e6a817;">$' + Number(regPrice).toFixed(2) + '<span class="tld-yr">/yr</span></div>' +
+            '<div class="tld-renew">Make Offer</div>' +
+            '</div>';
+        }
+      } else if (isSale) {
+        var wasPrice = regularPrice > regPrice ? regularPrice : renewalPrice;
+        priceHtml = '<div class="tld-price-wrap">' +
+          premiumBadge +
+          '<div><span class="tld-was">$' + Number(wasPrice).toFixed(2) + '</span>' +
+          '<span class="tld-price">$' + Number(regPrice).toFixed(2) + '<span class="tld-yr">/yr</span></span>' +
+          '<span class="tld-sale-badge">SALE</span></div>' +
+          '<div class="tld-renew">renews at $' + Number(renewalPrice).toFixed(2) + '</div>' +
+          '</div>';
+      } else {
+        priceHtml = '<div class="tld-price-wrap">' +
+          premiumBadge +
+          '<div class="tld-price">$' + Number(regPrice).toFixed(2) + '<span class="tld-yr">/yr</span></div>' +
+          (renewalPrice !== regPrice ? '<div class="tld-renew">renews at $' + Number(renewalPrice).toFixed(2) + '</div>' : '') +
+          '</div>';
+      }
+
+      var stateClass = '';
+      if (isSelected) stateClass = ' selected';
+      else if (isRegistered) stateClass = ' taken';
+      else if (isAftermarket) stateClass = ' aftermarket';
+      else if (isChecking) stateClass = ' checking';
+
+      var onclick = isRegistered ? '' : 'onclick="selectTld(\'' + escapeHtml(name) + '\',' + i + ')"';
+
+      return '<div class="tld-card' + stateClass + '" data-tld-idx="' + i + '" ' + onclick + '>' +
+        '<div class="tld-left"><span class="tld-domain">' + escapeHtml(name) + '<span class="tld-ext">' + escapeHtml(t.tld) + '</span></span></div>' +
+        '<div style="display:flex;align-items:center;gap:6px;">' + priceHtml + statusHtml + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  window.selectTld = function(name, idx) {
+    var t = deployPricing.domain_tlds[idx];
+    if (!t) return;
+    var fullDomain = name + t.tld;
+    var info = availabilityResults[fullDomain] || {};
+    // Don't allow selecting registry-locked domains
+    if (info.status === 'registered') return;
+    var isAftermarket = info.status === 'aftermarket';
+    // Use live Porkbun registration price
+    var regPrice = info.registration != null ? info.registration : t.price;
+    var renewalPrice = info.renewal != null ? info.renewal : regPrice;
+    selectedDomain = { name: name, tld: t.tld, price: regPrice, renewal: renewalPrice, aftermarket: isAftermarket, aftermarket_price: info.aftermarket_price || null };
+    // Update selection UI
+    var cards = document.querySelectorAll('.tld-card');
+    cards.forEach(function(el) {
+      var i = parseInt(el.getAttribute('data-tld-idx'));
+      el.classList.toggle('selected', i === idx);
+      if (i === idx) el.classList.remove('taken', 'checking', 'aftermarket');
+    });
+    // Show selected badge
+    var badge = document.getElementById('tld-selected-badge');
+    var priceText = '';
+    if (isAftermarket) {
+      if (info.aftermarket_price) {
+        priceText = 'Aftermarket — $' + Number(info.aftermarket_price).toLocaleString();
+        if (info.aftermarket_buy_now) priceText += ' (Buy Now)';
+        else if (info.aftermarket_make_offer) priceText += ' (Make Offer)';
+      } else {
+        priceText = 'Aftermarket — $' + Number(regPrice).toFixed(2) + '/yr (Make Offer)';
+      }
+    } else {
+      var isSale = regPrice < renewalPrice;
+      priceText = '$' + Number(regPrice).toFixed(2) + '/yr';
+      if (isSale) priceText += ' (renews $' + Number(renewalPrice).toFixed(2) + ')';
+    }
+    if (info.status === 'available') priceText += ' \u2714';
+    document.getElementById('tld-selected-name').textContent = fullDomain + ' — ' + priceText;
+    badge.classList.add('visible');
+    recalcPrice();
+  };
+
+  window.clearDomainSelection = function() {
+    selectedDomain = null;
+    document.getElementById('tld-selected-badge').classList.remove('visible');
+    var cards = document.querySelectorAll('.tld-card');
+    cards.forEach(function(el) { el.classList.remove('selected'); });
+    recalcPrice();
+  };
+
+  function renderAddons() {
+    var list = document.getElementById('addon-list');
+    if (!deployPricing.addons || !deployPricing.addons.length) {
+      list.innerHTML = '<div style="text-align:center;padding:12px;color:#aaa;font-size:13px;">No additional features available for your plan.</div>';
+      return;
+    }
+    list.innerHTML = deployPricing.addons.map(function(a, i) {
+      return '<div class="addon-item" data-addon="' + i + '" onclick="toggleAddon(' + i + ')">' +
+        '<div class="addon-check"><i class="fa fa-check"></i></div>' +
+        '<div class="addon-info"><div class="addon-name">' + escapeHtml(a.name) + '</div>' +
+        (a.description ? '<div class="addon-desc">' + escapeHtml(a.description) + '</div>' : '') +
+        '</div><div class="addon-price">+$' + Number(a.price).toFixed(2) + '</div></div>';
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.appendChild(document.createTextNode(s || ''));
+    return d.innerHTML;
+  }
+
+  window.toggleAddon = function(idx) {
+    if (selectedAddons[idx]) { delete selectedAddons[idx]; }
+    else { selectedAddons[idx] = true; }
+    var items = document.querySelectorAll('.addon-item');
+    items.forEach(function(el) {
+      var i = parseInt(el.getAttribute('data-addon'));
+      el.classList.toggle('selected', !!selectedAddons[i]);
+    });
+    recalcPrice();
+  };
+
+  function recalcPrice() {
+    var base = deployPricing.base_fee || 0;
+    var taxRate = deployPricing.tax_rate || 0;
+    var monthly = deployPricing.monthly_maintenance || 0;
+
+    // Use aftermarket price if domain is aftermarket and has a listing price
+    var domainPrice = 0;
+    if (selectedDomain) {
+      if (selectedDomain.aftermarket && selectedDomain.aftermarket_price) {
+        domainPrice = selectedDomain.aftermarket_price;
+      } else {
+        domainPrice = selectedDomain.price;
+      }
+    }
+
+    var addonTotal = 0;
+    var addonRowsHtml = '';
+    Object.keys(selectedAddons).forEach(function(idx) {
+      var a = deployPricing.addons[parseInt(idx)];
+      if (a) {
+        addonTotal += a.price;
+        addonRowsHtml += '<div class="price-row"><span class="label">' + escapeHtml(a.name) + '</span><span class="value">+$' + Number(a.price).toFixed(2) + '</span></div>';
+      }
+    });
+
+    var subtotal = base + domainPrice + addonTotal;
+
+    // Apply coupon discount
+    var discountAmount = 0;
+    var discountRow = document.getElementById('price-discount-row');
+    if (appliedCoupon) {
+      if (appliedCoupon.discount_type === 'percent') {
+        discountAmount = Math.round(subtotal * appliedCoupon.discount_value) / 100;
+      } else {
+        discountAmount = Math.min(appliedCoupon.discount_value, subtotal);
+      }
+      discountAmount = Math.round(discountAmount * 100) / 100;
+      subtotal = Math.round((subtotal - discountAmount) * 100) / 100;
+      document.getElementById('price-discount').textContent = '-$' + Number(discountAmount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      var discLabel = appliedCoupon.discount_type === 'percent' ? '(' + appliedCoupon.discount_value + '% off)' : '';
+      document.getElementById('price-discount-label').textContent = discLabel;
+      discountRow.style.display = '';
+    } else {
+      discountRow.style.display = 'none';
+    }
+
+    var tax = Math.round(subtotal * taxRate) / 100;
+    var total = subtotal + tax;
+
+    document.getElementById('price-base').textContent = '$' + base.toFixed(2);
+
+    // Domain row
+    var domainRow = document.getElementById('price-domain-row');
+    if (domainPrice > 0 && selectedDomain) {
+      domainRow.style.display = '';
+      var domainLabel = selectedDomain.name + selectedDomain.tld;
+      if (selectedDomain.aftermarket && selectedDomain.aftermarket_price) {
+        domainLabel += ' (Aftermarket)';
+      }
+      document.getElementById('price-domain-name').textContent = '(' + domainLabel + ')';
+      document.getElementById('price-domain').textContent = '+$' + Number(domainPrice).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    } else {
+      domainRow.style.display = 'none';
+    }
+
+    document.getElementById('price-addon-rows').innerHTML = addonRowsHtml;
+    document.getElementById('price-subtotal').textContent = '$' + Number(subtotal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('price-tax-rate').textContent = taxRate;
+    document.getElementById('price-tax').textContent = '$' + Number(tax).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('price-total').textContent = '$' + Number(total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    // Add domain renewal cost to monthly (yearly renewal / 12)
+    var domainMonthly = 0;
+    if (selectedDomain && selectedDomain.renewal) {
+      domainMonthly = selectedDomain.renewal / 12;
+    }
+    var totalMonthly = monthly + domainMonthly;
+    var monthlyEl = document.getElementById('price-monthly');
+    if (appliedCoupon && appliedCoupon.free_first_month) {
+      monthlyEl.innerHTML = '<s style="color:#999;">$' + totalMonthly.toFixed(2) + '</s> <span style="color:#28a745;font-weight:700;">FREE</span> <span style="font-size:11px;color:#888;">(1st month)</span>';
+    } else {
+      monthlyEl.textContent = '$' + totalMonthly.toFixed(2);
+    }
+    var breakdown = document.getElementById('price-monthly-breakdown');
+    if (domainMonthly > 0) {
+      breakdown.textContent = '($' + monthly.toFixed(2) + ' maintenance + $' + domainMonthly.toFixed(2) + ' domain renewal)';
+      breakdown.style.display = 'inline';
+    } else {
+      breakdown.style.display = 'none';
+    }
+  }
+
+  window.applyCoupon = function() {
+    var input = document.getElementById('coupon-input');
+    var status = document.getElementById('coupon-status');
+    var btn = document.getElementById('coupon-apply-btn');
+    var code = input.value.trim();
+    if (!code) {
+      status.textContent = 'Please enter a coupon code.';
+      status.className = 'coupon-status error';
+      status.style.display = 'block';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    fetch(API + '/validate-coupon', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ code: code })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (res.ok && res.data.ok) {
+        appliedCoupon = res.data;
+        var label = appliedCoupon.discount_type === 'percent' ? (appliedCoupon.discount_value + '% off') : ('$' + Number(appliedCoupon.discount_value).toFixed(2) + ' off');
+        if (appliedCoupon.free_first_month) label += ' + 1st month free';
+        status.innerHTML = '<span class="coupon-applied-badge"><i class="fa fa-tag"></i> ' + escapeHtml(appliedCoupon.code) + ' — ' + label + ' <button class="coupon-remove" onclick="removeCoupon()" title="Remove coupon"><i class="fa fa-times"></i></button></span>';
+        status.className = 'coupon-status success';
+        status.style.display = 'block';
+        input.disabled = true;
+        btn.style.display = 'none';
+        recalcPrice();
+      } else {
+        status.textContent = res.data.error || 'Invalid coupon code.';
+        status.className = 'coupon-status error';
+        status.style.display = 'block';
+      }
+    })
+    .catch(function() {
+      status.textContent = 'Could not validate coupon.';
+      status.className = 'coupon-status error';
+      status.style.display = 'block';
+    })
+    .finally(function() { btn.disabled = false; btn.textContent = 'Apply'; });
+  };
+
+  window.removeCoupon = function() {
+    appliedCoupon = null;
+    var input = document.getElementById('coupon-input');
+    var status = document.getElementById('coupon-status');
+    var btn = document.getElementById('coupon-apply-btn');
+    input.disabled = false;
+    input.value = '';
+    btn.style.display = '';
+    status.style.display = 'none';
+    recalcPrice();
+  };
+
+  window.sendDeploy = function() {
+    var alert = document.getElementById('deploy-alert');
+    var btn = document.getElementById('deploy-send-btn');
+
+    if (!selectedDomain) {
+      alert.textContent = 'Please search for and select a domain name.';
+      alert.style.display = 'block';
+      alert.style.background = '#f8d7da';
+      alert.style.color = '#721c24';
+      return;
+    }
+
+    var domain = selectedDomain.name + selectedDomain.tld;
+    var domainPrice = (selectedDomain.aftermarket && selectedDomain.aftermarket_price) ? selectedDomain.aftermarket_price : selectedDomain.price;
+
+    var addonNames = [];
+    Object.keys(selectedAddons).forEach(function(idx) {
+      var a = deployPricing.addons[parseInt(idx)];
+      if (a) addonNames.push(a.name);
+    });
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    var domainRenewal = (selectedDomain.renewal && !selectedDomain.aftermarket) ? selectedDomain.renewal : 0;
+
+    fetch(API + '/deploy-request', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ domain: domain, domain_price: domainPrice, domain_renewal: domainRenewal, addons: addonNames, coupon_code: appliedCoupon ? appliedCoupon.code : '' })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      var d = res.data;
+      if (d.checkout_url) {
+        // Stripe configured — redirect to checkout
+        alert.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Redirecting to payment...';
+        alert.style.display = 'block';
+        alert.style.background = '#d4edda';
+        alert.style.color = '#155724';
+        window.top.location.href = d.checkout_url;
+      } else if (res.ok && d.ok && !d.checkout_url) {
+        // Backend submitted without Stripe (keys not configured) — show error
+        alert.innerHTML = '<i class="fa fa-exclamation-triangle"></i> Payment processing is not yet configured. Please contact the administrator.';
+        alert.style.display = 'block';
+        alert.style.background = '#fff3cd';
+        alert.style.color = '#856404';
+      } else {
+        alert.textContent = d.error || 'Failed to submit.';
+        alert.style.display = 'block';
+        alert.style.background = '#f8d7da';
+        alert.style.color = '#721c24';
+      }
+    })
+    .catch(function() {
+      alert.textContent = 'Could not connect to server.';
+      alert.style.display = 'block';
+      alert.style.background = '#f8d7da';
+      alert.style.color = '#721c24';
+    })
+    .finally(function() { btn.disabled = false; btn.innerHTML = '<i class="fa fa-credit-card"></i> Pay &amp; Deploy'; btn.style.display = ''; });
+  };
+
+  // Close modals on outside click
+  document.getElementById('revisionModal').addEventListener('click', function(e) {
+    if (e.target === this) closeRevision();
+  });
+  document.getElementById('deployModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeploy();
+  });
+})();
+</script>
+</body>
+</html>

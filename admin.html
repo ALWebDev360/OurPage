@@ -126,7 +126,9 @@
         <li><a href="#" data-view="dashboard" class="active"><i class="fa fa-tachometer"></i> <span>Dashboard</span></a></li>
         <li><a href="#" data-view="users"><i class="fa fa-users"></i> <span>Accounts</span></a></li>
         <li><a href="#" data-view="consultations"><i class="fa fa-calendar"></i> <span>Consultations</span></a></li>
+        <li><a href="#" data-view="messages"><i class="fa fa-envelope"></i> <span>Messages</span> <span id="msg-badge" class="badge bg-danger" style="font-size:10px;margin-left:6px;display:none;"></span></a></li>
         <li><a href="#" data-view="availability"><i class="fa fa-clock-o"></i> <span>Availability</span></a></li>
+        <li><a href="#" data-view="settings"><i class="fa fa-cog"></i> <span>Settings</span></a></li>
       </ul>
       <div class="sidebar-bottom">
         <a href="#" id="admin-logout"><i class="fa fa-sign-out"></i> Log Out</a>
@@ -244,6 +246,225 @@
               </form>
               <div id="blocked-dates-list"></div>
               <div id="blocked-empty" style="display:none;text-align:center;padding:20px;color:#aaa;">No blocked dates</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Messages View ── -->
+      <div id="view-messages" class="view-section">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="d-flex gap-2 flex-wrap">
+            <input type="text" class="search-bar" id="msg-search" placeholder="Search messages...">
+            <select class="form-select" id="msg-cat-filter" style="border-radius:10px;width:auto;font-size:14px;">
+              <option value="">All Categories</option>
+              <option value="revision">Revision Requests</option>
+              <option value="deploy">Deploy Requests</option>
+              <option value="general">General</option>
+              <option value="bug">Bug Report</option>
+              <option value="other">Other</option>
+            </select>
+            <select class="form-select" id="msg-read-filter" style="border-radius:10px;width:auto;font-size:14px;">
+              <option value="">All</option>
+              <option value="unread">Unread</option>
+              <option value="read">Read</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel-card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th style="width:30px;"></th><th>Client</th><th>Subject</th><th>Category</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="msg-tbody"></tbody>
+            </table>
+          </div>
+          <div id="msg-empty" style="display:none;text-align:center;padding:40px;color:#aaa;">No messages found</div>
+        </div>
+      </div>
+
+      <!-- ── Settings View ── -->
+      <div id="view-settings" class="view-section">
+        <div class="row g-4">
+          <div class="col-lg-12">
+            <div class="panel-card" style="border-left:4px solid #1e3c72;">
+              <h5><i class="fa fa-globe" style="margin-right:8px;color:#1e3c72;"></i>ngrok Tunnel</h5>
+              <p style="font-size:13px;color:#888;margin-bottom:16px;">Enable external access via ngrok. Run <code>ngrok http 5000</code> and paste the URL below. This lets Stripe webhooks reach your server and clients access the site externally.</p>
+              <div id="ngrok-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+              <div id="ngrok-status" style="padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:13px;background:#f0f0f0;">Loading...</div>
+              <div class="d-flex gap-2 align-items-end">
+                <div style="flex:1;">
+                  <label class="form-label" style="font-weight:600;font-size:14px;">ngrok URL</label>
+                  <input type="url" class="form-control" id="ngrok-url" placeholder="https://abcd-1234.ngrok-free.app" style="border-radius:10px;padding:10px 15px;font-family:monospace;">
+                </div>
+                <button type="button" class="btn btn-es" onclick="saveNgrokUrl()" style="border-radius:10px;height:44px;"><i class="fa fa-save"></i> Save</button>
+                <button type="button" class="btn btn-outline-danger" onclick="clearNgrokUrl()" style="border-radius:10px;height:44px;" title="Disconnect"><i class="fa fa-times"></i></button>
+              </div>
+              <div id="ngrok-link" style="display:none;margin-top:12px;padding:10px 15px;background:#eef3fb;border-radius:10px;font-size:13px;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-4 mt-1">
+          <div class="col-lg-6">
+            <div class="panel-card">
+              <h5><i class="fa fa-key" style="margin-right:8px;"></i>Porkbun API Keys</h5>
+              <p style="font-size:13px;color:#888;margin-bottom:20px;">Configure your Porkbun API keys for real-time domain availability checking and pricing. Get your keys at <a href="https://porkbun.com/account/api" target="_blank" style="color:#ff5959;">porkbun.com/account/api</a></p>
+              <div id="pb-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+              <div id="pb-status" style="padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:13px;background:#f0f0f0;">Loading...</div>
+              <div class="mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">API Key</label>
+                <input type="text" class="form-control" id="pb-apikey" placeholder="pk1_..." style="border-radius:10px;padding:10px 15px;font-family:monospace;">
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">Secret API Key</label>
+                <input type="password" class="form-control" id="pb-secret" placeholder="sk1_..." style="border-radius:10px;padding:10px 15px;font-family:monospace;">
+              </div>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-es flex-fill" onclick="savePorkbunKeys()" id="pb-save-btn"><i class="fa fa-save"></i> Save Keys</button>
+                <button type="button" class="btn btn-outline-primary" onclick="testPorkbunKeys()" id="pb-test-btn" style="border-radius:10px;"><i class="fa fa-plug"></i> Test Connection</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="panel-card">
+              <h5><i class="fab fa-stripe-s" style="margin-right:8px;color:#635bff;"></i>Stripe API Keys</h5>
+              <p style="font-size:13px;color:#888;margin-bottom:20px;">Configure Stripe for deploy payments. Get your keys at <a href="https://dashboard.stripe.com/apikeys" target="_blank" style="color:#635bff;">dashboard.stripe.com/apikeys</a></p>
+              <div id="stripe-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+              <div id="stripe-status" style="padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:13px;background:#f0f0f0;">Loading...</div>
+              <div class="mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">Publishable Key</label>
+                <input type="text" class="form-control" id="stripe-pk" placeholder="pk_test_..." style="border-radius:10px;padding:10px 15px;font-family:monospace;">
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">Secret Key</label>
+                <input type="password" class="form-control" id="stripe-sk" placeholder="sk_test_..." style="border-radius:10px;padding:10px 15px;font-family:monospace;">
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-weight:600;font-size:14px;">Webhook Secret <span style="font-weight:400;color:#999;">(optional)</span></label>
+                <input type="password" class="form-control" id="stripe-wh" placeholder="whsec_..." style="border-radius:10px;padding:10px 15px;font-family:monospace;">
+              </div>
+              <button type="button" class="btn btn-es w-100" onclick="saveStripeKeys()" id="stripe-save-btn"><i class="fa fa-save"></i> Save Keys</button>
+            </div>
+          </div>
+        </div>
+        <div class="row g-4 mt-1">
+          <div class="col-lg-6">
+            <div class="panel-card" style="border-left:4px solid #28a745;">
+              <h5><i class="fa fa-envelope" style="margin-right:8px;color:#28a745;"></i>Email (SMTP)</h5>
+              <p style="font-size:13px;color:#888;margin-bottom:16px;">Configure SMTP to send welcome emails, notifications, and replies. Works with Gmail, Outlook, or any SMTP provider.</p>
+              <div id="email-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+              <div id="email-status" style="padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:13px;background:#f0f0f0;">Loading...</div>
+              <div class="row g-2 mb-2">
+                <div class="col-8">
+                  <label style="font-size:12px;font-weight:600;">SMTP Host</label>
+                  <input type="text" class="form-control form-control-sm" id="smtp-host" placeholder="smtp.gmail.com" style="border-radius:8px;font-family:monospace;">
+                </div>
+                <div class="col-4">
+                  <label style="font-size:12px;font-weight:600;">Port</label>
+                  <input type="number" class="form-control form-control-sm" id="smtp-port" placeholder="587" value="587" style="border-radius:8px;">
+                </div>
+              </div>
+              <div class="mb-2">
+                <label style="font-size:12px;font-weight:600;">Username / Email</label>
+                <input type="text" class="form-control form-control-sm" id="smtp-user" placeholder="you@gmail.com" style="border-radius:8px;font-family:monospace;">
+              </div>
+              <div class="mb-2">
+                <label style="font-size:12px;font-weight:600;">Password / App Password</label>
+                <input type="password" class="form-control form-control-sm" id="smtp-pass" placeholder="App password or SMTP password" style="border-radius:8px;font-family:monospace;">
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <label style="font-size:12px;font-weight:600;">From Name</label>
+                  <input type="text" class="form-control form-control-sm" id="smtp-from-name" placeholder="Elevated Solutions" style="border-radius:8px;">
+                </div>
+                <div class="col-6">
+                  <label style="font-size:12px;font-weight:600;">From Email</label>
+                  <input type="text" class="form-control form-control-sm" id="smtp-from-email" placeholder="noreply@yourdomain.com" style="border-radius:8px;font-family:monospace;">
+                </div>
+              </div>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-es flex-fill" onclick="saveEmailConfig()" style="font-size:13px;padding:8px;"><i class="fa fa-save"></i> Save</button>
+                <button type="button" class="btn btn-outline-success" onclick="testEmail()" style="border-radius:10px;font-size:13px;padding:8px;"><i class="fa fa-paper-plane"></i> Send Test</button>
+              </div>
+              <p style="font-size:11px;color:#aaa;margin-top:10px;margin-bottom:0;"><strong>Gmail users:</strong> Use an <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:#28a745;">App Password</a> (not your regular password). Host: <code>smtp.gmail.com</code>, Port: <code>587</code></p>
+            </div>
+          </div>
+          <div class="col-lg-6" style="display:flex;align-items:stretch;">
+            <div class="panel-card" style="flex:1;">
+              <h5><i class="fa fa-info-circle" style="margin-right:8px;color:#17a2b8;"></i>SMTP Quick Reference</h5>
+              <div style="font-size:13px;color:#555;line-height:1.8;">
+                <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                  <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0;font-weight:600;">Gmail</td><td><code>smtp.gmail.com</code></td><td>587</td></tr>
+                  <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0;font-weight:600;">Outlook</td><td><code>smtp.office365.com</code></td><td>587</td></tr>
+                  <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0;font-weight:600;">Yahoo</td><td><code>smtp.mail.yahoo.com</code></td><td>465</td></tr>
+                  <tr style="border-bottom:1px solid #eee;"><td style="padding:6px 0;font-weight:600;">Zoho</td><td><code>smtp.zoho.com</code></td><td>465</td></tr>
+                  <tr><td style="padding:6px 0;font-weight:600;">Custom</td><td colspan="2">Check your provider's SMTP settings</td></tr>
+                </table>
+                <p style="margin-top:12px;font-size:12px;color:#999;">Emails sent: Welcome email on signup. More coming soon (deploy updates, invoice receipts, etc.).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-4 mt-1">
+          <div class="col-lg-8">
+            <div class="panel-card">
+              <h5><i class="fa fa-tag" style="margin-right:8px;color:#e67e22;"></i>Coupon Codes</h5>
+              <p style="font-size:13px;color:#888;margin-bottom:16px;">Create and manage discount coupons for the deploy checkout.</p>
+              <div id="coupon-list-area" style="margin-bottom:16px;">
+                <div style="text-align:center;padding:20px;color:#aaa;font-size:13px;">Loading coupons...</div>
+              </div>
+              <div style="background:#f8f9fc;border-radius:12px;padding:16px 18px;border:1px solid #eee;">
+                <h6 style="font-weight:700;margin-bottom:12px;font-size:14px;"><i class="fa fa-plus-circle" style="margin-right:6px;"></i>Create New Coupon</h6>
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-3">
+                    <label style="font-size:12px;font-weight:600;">Code</label>
+                    <input type="text" class="form-control form-control-sm" id="new-coupon-code" placeholder="e.g. SAVE20" maxlength="50" style="text-transform:uppercase;font-family:monospace;">
+                  </div>
+                  <div class="col-md-2">
+                    <label style="font-size:12px;font-weight:600;">Type</label>
+                    <select class="form-control form-control-sm" id="new-coupon-type">
+                      <option value="percent">% Off</option>
+                      <option value="flat">$ Off</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <label style="font-size:12px;font-weight:600;">Value</label>
+                    <input type="number" class="form-control form-control-sm" id="new-coupon-value" placeholder="20" min="0" step="0.01">
+                  </div>
+                  <div class="col-md-2">
+                    <label style="font-size:12px;font-weight:600;">Max Uses</label>
+                    <input type="number" class="form-control form-control-sm" id="new-coupon-max" placeholder="0=∞" min="0" step="1">
+                  </div>
+                  <div class="col-md-3">
+                    <label style="font-size:12px;font-weight:600;">Expires</label>
+                    <input type="date" class="form-control form-control-sm" id="new-coupon-expires">
+                  </div>
+                </div>
+                <div class="row g-2 mt-1">
+                  <div class="col-md-12">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="new-coupon-free-month">
+                      <label class="form-check-label" for="new-coupon-free-month" style="font-size:13px;">Free first month of maintenance</label>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-es w-100 mt-3" onclick="createCoupon()" id="create-coupon-btn" style="font-size:13px;padding:8px;"><i class="fa fa-plus"></i> Create Coupon</button>
+                <div id="coupon-create-alert" style="display:none;margin-top:10px;padding:8px 12px;border-radius:8px;font-size:13px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-4 mt-1">
+          <div class="col-lg-6">
+            <div class="panel-card">
+              <h5><i class="fa fa-info-circle" style="margin-right:8px;"></i>Domain Lookup Info</h5>
+              <div style="font-size:13px;color:#555;line-height:1.7;">
+                <p><strong>How domain checks work:</strong></p>
+                <ul style="padding-left:18px;margin-bottom:12px;">
+                  <li><strong>With Porkbun API keys:</strong> Real-time availability + exact promo pricing, premium domain detection, and renewal rates directly from Porkbun.</li>
+                  <li><strong>Without keys:</strong> Falls back to tldx for basic availability + cached Porkbun bulk pricing.</li>
+                </ul>
+                <p style="color:#999;"><strong>Note:</strong> Porkbun rate-limits domain checks to ~1 per 10 seconds. The system checks all TLDs in parallel — some get Porkbun data, the rest use tldx as fallback.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -379,11 +600,97 @@
     </div>
   </div>
 
+  <!-- ═══ Demo Preview Picker Modal ═══ -->
+  <div class="modal fade" id="demoPickerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Service Preview</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="demo-picker-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+          <p id="demo-picker-status" style="font-size:14px;margin-bottom:15px;"></p>
+          <input type="hidden" id="demo-picker-uid">
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;font-size:14px;">Select Website Preview</label>
+            <select class="form-control" id="demo-picker-select" style="border-radius:10px;padding:10px 15px;">
+              <option value="">— Loading sites —</option>
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-es flex-fill" id="demo-picker-save-btn" onclick="saveDemoPreview()">Enable Preview</button>
+            <button type="button" class="btn btn-outline-danger" id="demo-picker-disable-btn" style="display:none;" onclick="disableDemoPreview()">Disable</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Message View Modal ═══ -->
+  <div class="modal fade" id="msgViewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Message Details</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="msg-view-body" style="max-height:70vh;overflow-y:auto;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Deploy Pricing Modal ═══ -->
+  <div class="modal fade" id="deployConfigModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-rocket"></i> Deploy Pricing — <span id="dc-user-name"></span></h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="dc-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Base Deployment Fee ($)</label>
+              <input type="number" class="form-control" id="dc-base-fee" min="0" step="0.01" style="border-radius:10px;padding:10px 15px;">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Monthly Maintenance ($)</label>
+              <input type="number" class="form-control" id="dc-monthly" min="0" step="0.01" style="border-radius:10px;padding:10px 15px;">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-weight:600;font-size:14px;">Tax Rate (%)</label>
+              <input type="number" class="form-control" id="dc-tax-rate" min="0" step="0.01" max="100" style="border-radius:10px;padding:10px 15px;">
+            </div>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 style="font-weight:700;margin:0;">Add-on Features</h6>
+            <button type="button" class="btn btn-sm btn-es" onclick="addAddonRow()" style="border-radius:8px;"><i class="fa fa-plus"></i> Add Feature</button>
+          </div>
+          <div id="dc-addons-list"></div>
+          <div id="dc-addons-empty" style="text-align:center;padding:16px;color:#aaa;font-size:13px;">No add-on features configured. Click "Add Feature" to create one.</div>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 style="font-weight:700;margin:0;"><i class="fa fa-globe" style="margin-right:6px;"></i>Domain TLD Pricing</h6>
+            <button type="button" class="btn btn-sm btn-es" onclick="addTldRow()" style="border-radius:8px;"><i class="fa fa-plus"></i> Add TLD</button>
+          </div>
+          <div id="dc-tlds-list"></div>
+          <div id="dc-tlds-empty" style="text-align:center;padding:16px;color:#aaa;font-size:13px;">No domain TLDs configured. Default pricing will be used.</div>
+          <hr>
+          <button type="button" class="btn btn-es w-100" onclick="saveDeployConfig()" id="dc-save-btn" style="padding:12px;border-radius:10px;"><i class="fa fa-save"></i> Save Pricing</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="vendor/jquery/jquery.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script>
   (function() {
-    var API = 'http://127.0.0.1:5000/api';
+    var API = (location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? 'http://127.0.0.1:5000/api' : location.origin + '/api';
     var token = null;
     var adminUser = null;
 
@@ -492,12 +799,14 @@
         this.classList.add('active');
         document.querySelectorAll('.view-section').forEach(function(s) { s.classList.remove('active'); });
         document.getElementById('view-' + view).classList.add('active');
-        var titles = { dashboard: 'Dashboard', users: 'Accounts', consultations: 'Consultations', availability: 'Availability' };
+        var titles = { dashboard: 'Dashboard', users: 'Accounts', consultations: 'Consultations', messages: 'Messages', availability: 'Availability', settings: 'Settings' };
         document.getElementById('page-title').textContent = titles[view] || view;
         if (view === 'dashboard') loadDashboard();
         if (view === 'users') loadUsers();
         if (view === 'consultations') loadConsultations();
+        if (view === 'messages') loadMessages();
         if (view === 'availability') loadAvailability();
+        if (view === 'settings') { loadPorkbunConfig(); loadStripeConfig(); loadEmailConfig(); loadCoupons(); }
       });
     });
 
@@ -562,13 +871,23 @@
       var r = userRoleFilter.value;
       if (s) params.set('search', s);
       if (r) params.set('role', r);
-      fetch(API + '/admin/users?' + params.toString(), { headers: authHeaders() })
-      .then(function(res) {
-        if (res.status === 401 || res.status === 403) { handleAuthError(); return null; }
-        return res.json();
-      })
-      .then(function(data) {
+
+      // Fetch users and preview-sites in parallel
+      Promise.all([
+        fetch(API + '/admin/users?' + params.toString(), { headers: authHeaders() }).then(function(res) {
+          if (res.status === 401 || res.status === 403) { handleAuthError(); return null; }
+          return res.json();
+        }),
+        fetch(API + '/admin/preview-sites', { headers: authHeaders() }).then(function(res) { return res.ok ? res.json() : { sites: [] }; })
+      ]).then(function(results) {
+        var data = results[0];
+        var sitesData = results[1];
         if (!data) return;
+
+        // Build a lookup: site name -> has_dist
+        var distMap = {};
+        (sitesData.sites || []).forEach(function(s) { distMap[s.name] = s.has_dist; });
+
         var users = data.users || [];
         var tbody = document.getElementById('users-tbody');
         var empty = document.getElementById('users-empty');
@@ -583,6 +902,17 @@
           var ppBtn = u.role === 'client'
             ? '<button class="btn btn-sm me-1 ' + (u.payment_portal ? 'btn-success' : 'btn-outline-secondary') + '" onclick="togglePaymentPortal(' + u.id + ')" title="' + (u.payment_portal ? 'Payment portal enabled — click to disable' : 'Enable payment portal') + '"><i class="fa fa-dollar"></i></button>'
             : '';
+          var dpBtn = u.role === 'client'
+            ? '<button class="btn btn-sm me-1 ' + (u.demo_preview ? 'btn-info text-white' : 'btn-outline-secondary') + '" onclick="toggleDemoPreview(' + u.id + ')" title="' + (u.demo_preview ? 'Service preview enabled — click to configure' : 'Enable service preview') + '"><i class="fa fa-eye"></i></button>'
+            : '';
+          var dcBtn = u.role === 'client'
+            ? '<button class="btn btn-sm me-1 btn-outline-warning" onclick="openDeployConfig(' + u.id + ', \'' + esc(u.name).replace(/'/g, "\\'") + '\')" title="Deploy pricing"><i class="fa fa-rocket"></i></button>'
+            : '';
+          var viewBtn = '';
+          if (u.role === 'client' && u.demo_preview && u.demo_preview_site) {
+            var subpath = distMap[u.demo_preview_site] ? u.demo_preview_site + '/dist/index.html' : u.demo_preview_site + '/index.html';
+            viewBtn = '<a class="btn btn-sm btn-outline-info me-1" href="http://127.0.0.1:8080/websitepreviews/' + encodeURIComponent(u.demo_preview_site) + (distMap[u.demo_preview_site] ? '/dist/index.html' : '/index.html') + '" target="_blank" title="View ' + esc(u.demo_preview_site) + ' preview"><i class="fa fa-external-link"></i></a>';
+          }
           html += '<tr>'
             + '<td><strong>' + esc(u.name) + '</strong></td>'
             + '<td>' + esc(u.email) + '</td>'
@@ -591,6 +921,9 @@
             + '<td style="font-size:13px;color:#aaa;">' + fmtDate(u.created_at ? u.created_at.split(' ')[0] : '') + '</td>'
             + '<td>'
             + ppBtn
+            + dpBtn
+            + dcBtn
+            + viewBtn
             + '<button class="btn btn-sm btn-outline-es me-1" onclick="editUser(' + u.id + ')"><i class="fa fa-pencil"></i></button>'
             + '<button class="btn btn-sm btn-outline-danger" onclick="deleteUser(' + u.id + ', \'' + esc(u.name).replace(/'/g, "\\'") + '\')"><i class="fa fa-trash"></i></button>'
             + '</td></tr>';
@@ -641,6 +974,226 @@
       fetch(API + '/admin/users/' + id, { method: 'DELETE', headers: authHeaders() })
       .then(function(r) { return r.json(); })
       .then(function() { loadUsers(); loadDashboard(); });
+    };
+
+    var demoPickerModal = new bootstrap.Modal(document.getElementById('demoPickerModal'));
+
+    window.toggleDemoPreview = function(id) {
+      document.getElementById('demo-picker-uid').value = id;
+      document.getElementById('demo-picker-alert').style.display = 'none';
+      var sel = document.getElementById('demo-picker-select');
+      sel.innerHTML = '<option value="">— Loading —</option>';
+
+      // Load available sites
+      fetch(API + '/admin/preview-sites', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var sites = data.sites || [];
+        sel.innerHTML = '<option value="">— Select a site —</option>';
+        sites.forEach(function(s) {
+          sel.innerHTML += '<option value="' + esc(s.name) + '">' + esc(s.name) + '</option>';
+        });
+      });
+
+      // Load user's current assignment
+      fetch(API + '/admin/users/' + id, { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var u = data.user;
+        if (u && u.demo_preview && u.demo_preview_site) {
+          document.getElementById('demo-picker-status').innerHTML = '<span style="color:#17a2b8;font-weight:600;"><i class="fa fa-check-circle"></i> Preview enabled: <strong>' + esc(u.demo_preview_site) + '</strong> for ' + esc(u.name) + '</span>';
+          document.getElementById('demo-picker-save-btn').textContent = 'Update Preview';
+          document.getElementById('demo-picker-disable-btn').style.display = 'block';
+          // Pre-select current site once dropdown loads
+          setTimeout(function() { sel.value = u.demo_preview_site; }, 300);
+        } else {
+          document.getElementById('demo-picker-status').innerHTML = 'Assign a website preview for <strong>' + esc(u ? u.name : '') + '</strong>';
+          document.getElementById('demo-picker-save-btn').textContent = 'Enable Preview';
+          document.getElementById('demo-picker-disable-btn').style.display = 'none';
+        }
+        demoPickerModal.show();
+      });
+    };
+
+    window.saveDemoPreview = function() {
+      var uid = document.getElementById('demo-picker-uid').value;
+      var site = document.getElementById('demo-picker-select').value;
+      if (!site) {
+        var alert = document.getElementById('demo-picker-alert');
+        alert.style.display = 'block';
+        alert.style.background = '#f8d7da';
+        alert.style.color = '#721c24';
+        alert.textContent = 'Please select a site first.';
+        return;
+      }
+      fetch(API + '/admin/users/' + uid + '/demo-preview', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ site: site })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) {
+          var alert = document.getElementById('demo-picker-alert');
+          alert.style.display = 'block';
+          alert.style.background = '#f8d7da';
+          alert.style.color = '#721c24';
+          alert.textContent = data.error;
+          return;
+        }
+        var alert = document.getElementById('demo-picker-alert');
+        alert.style.display = 'block';
+        alert.style.background = '#d4edda';
+        alert.style.color = '#155724';
+        alert.textContent = 'Preview enabled!';
+        setTimeout(function() { demoPickerModal.hide(); loadUsers(); }, 800);
+      });
+    };
+
+    window.disableDemoPreview = function() {
+      var uid = document.getElementById('demo-picker-uid').value;
+      fetch(API + '/admin/users/' + uid + '/demo-preview', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({})
+      })
+      .then(function(r) { return r.json(); })
+      .then(function() {
+        demoPickerModal.hide();
+        loadUsers();
+      });
+    };
+
+    // ═══ Deploy Config ═══
+    var deployConfigModal = new bootstrap.Modal(document.getElementById('deployConfigModal'));
+    var dcUserId = null;
+    var dcAddons = [];
+    var dcTlds = [];
+
+    window.openDeployConfig = function(userId, userName) {
+      dcUserId = userId;
+      dcAddons = [];
+      dcTlds = [];
+      document.getElementById('dc-user-name').textContent = userName;
+      document.getElementById('dc-alert').style.display = 'none';
+      document.getElementById('dc-base-fee').value = '499';
+      document.getElementById('dc-monthly').value = '49';
+      document.getElementById('dc-tax-rate').value = '8.25';
+      document.getElementById('dc-addons-list').innerHTML = '';
+      document.getElementById('dc-addons-empty').style.display = 'block';
+      document.getElementById('dc-tlds-list').innerHTML = '';
+      document.getElementById('dc-tlds-empty').style.display = 'block';
+      deployConfigModal.show();
+      // Load existing config
+      fetch(API + '/admin/users/' + userId + '/deploy-config', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.config) {
+          document.getElementById('dc-base-fee').value = d.config.base_fee;
+          document.getElementById('dc-monthly').value = d.config.monthly_maintenance;
+          document.getElementById('dc-tax-rate').value = d.config.tax_rate;
+          dcAddons = d.config.addons || [];
+          dcTlds = d.config.domain_tlds || [];
+          renderAddonRows();
+          renderTldRows();
+        }
+      });
+    };
+
+    function renderAddonRows() {
+      var list = document.getElementById('dc-addons-list');
+      var empty = document.getElementById('dc-addons-empty');
+      if (!dcAddons.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      list.innerHTML = dcAddons.map(function(a, i) {
+        return '<div class="d-flex gap-2 align-items-center mb-2">' +
+          '<input type="text" class="form-control" value="' + esc(a.name) + '" placeholder="Feature name" style="border-radius:8px;font-size:13px;" onchange="updateAddon(' + i + ',\'name\',this.value)">' +
+          '<input type="number" class="form-control" value="' + a.price + '" placeholder="Price" step="0.01" min="0" style="border-radius:8px;font-size:13px;width:110px;" onchange="updateAddon(' + i + ',\'price\',this.value)">' +
+          '<input type="text" class="form-control" value="' + esc(a.description || '') + '" placeholder="Description (optional)" style="border-radius:8px;font-size:13px;" onchange="updateAddon(' + i + ',\'description\',this.value)">' +
+          '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAddon(' + i + ')" style="border-radius:8px;flex-shrink:0;"><i class="fa fa-trash"></i></button></div>';
+      }).join('');
+    }
+
+    window.addAddonRow = function() {
+      dcAddons.push({ name: '', price: 0, description: '' });
+      renderAddonRows();
+    };
+
+    window.updateAddon = function(idx, field, val) {
+      if (field === 'price') val = parseFloat(val) || 0;
+      dcAddons[idx][field] = val;
+    };
+
+    window.removeAddon = function(idx) {
+      dcAddons.splice(idx, 1);
+      renderAddonRows();
+    };
+
+    // TLD row management
+    function renderTldRows() {
+      var list = document.getElementById('dc-tlds-list');
+      var empty = document.getElementById('dc-tlds-empty');
+      if (!dcTlds.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      list.innerHTML = dcTlds.map(function(t, i) {
+        return '<div class="d-flex gap-2 align-items-center mb-2">' +
+          '<input type="text" class="form-control" value="' + esc(t.tld) + '" placeholder=".com" style="border-radius:8px;font-size:13px;width:120px;" onchange="updateTld(' + i + ',\'tld\',this.value)">' +
+          '<input type="number" class="form-control" value="' + t.price + '" placeholder="Price/yr" step="0.01" min="0" style="border-radius:8px;font-size:13px;width:120px;" onchange="updateTld(' + i + ',\'price\',this.value)">' +
+          '<span style="font-size:12px;color:#888;flex:1;">/year</span>' +
+          '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTld(' + i + ')" style="border-radius:8px;flex-shrink:0;"><i class="fa fa-trash"></i></button></div>';
+      }).join('');
+    }
+
+    window.addTldRow = function() {
+      dcTlds.push({ tld: '', price: 0 });
+      renderTldRows();
+    };
+
+    window.updateTld = function(idx, field, val) {
+      if (field === 'price') val = parseFloat(val) || 0;
+      dcTlds[idx][field] = val;
+    };
+
+    window.removeTld = function(idx) {
+      dcTlds.splice(idx, 1);
+      renderTldRows();
+    };
+
+    window.saveDeployConfig = function() {
+      var alert = document.getElementById('dc-alert');
+      var btn = document.getElementById('dc-save-btn');
+      btn.disabled = true;
+      // Filter out empty addon names
+      var cleanAddons = dcAddons.filter(function(a) { return a.name && a.name.trim(); });
+      // Filter out empty TLDs
+      var cleanTlds = dcTlds.filter(function(t) { return t.tld && t.tld.trim(); });
+      fetch(API + '/admin/users/' + dcUserId + '/deploy-config', {
+        method: 'PUT', headers: authHeaders(),
+        body: JSON.stringify({
+          base_fee: parseFloat(document.getElementById('dc-base-fee').value) || 0,
+          monthly_maintenance: parseFloat(document.getElementById('dc-monthly').value) || 0,
+          tax_rate: parseFloat(document.getElementById('dc-tax-rate').value) || 0,
+          addons: cleanAddons,
+          domain_tlds: cleanTlds
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          alert.textContent = 'Pricing saved successfully!';
+          alert.style.background = '#d4edda'; alert.style.color = '#155724';
+          alert.style.display = 'block';
+          setTimeout(function() { deployConfigModal.hide(); }, 1000);
+        } else {
+          alert.textContent = d.error || 'Save failed';
+          alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+          alert.style.display = 'block';
+        }
+      })
+      .catch(function() {
+        alert.textContent = 'Could not connect to server';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        alert.style.display = 'block';
+      })
+      .finally(function() { btn.disabled = false; });
     };
 
     window.togglePaymentPortal = function(id) {
@@ -967,6 +1520,524 @@
       loginAlert.textContent = 'Session expired. Please log in again.';
       loginAlert.style.display = 'block';
     }
+
+    // ═══ Messages ═══
+    var allMessages = [];
+
+    function loadUnreadBadge() {
+      fetch(API + '/admin/messages/unread-count', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var badge = document.getElementById('msg-badge');
+        if (d.count > 0) { badge.textContent = d.count; badge.style.display = 'inline'; }
+        else { badge.style.display = 'none'; }
+      }).catch(function() {});
+    }
+    loadUnreadBadge();
+    setInterval(loadUnreadBadge, 30000);
+
+    function loadMessages() {
+      fetch(API + '/admin/messages', { headers: authHeaders() })
+      .then(function(r) {
+        if (r.status === 401 || r.status === 403) { handleAuthError(); return null; }
+        return r.json();
+      })
+      .then(function(d) {
+        if (!d) return;
+        allMessages = d.messages || [];
+        renderMessages();
+      });
+    }
+
+    function renderMessages() {
+      var search = (document.getElementById('msg-search').value || '').toLowerCase();
+      var catF = document.getElementById('msg-cat-filter').value;
+      var readF = document.getElementById('msg-read-filter').value;
+      var filtered = allMessages.filter(function(m) {
+        if (catF && m.category !== catF) return false;
+        if (readF === 'unread' && m.is_read) return false;
+        if (readF === 'read' && !m.is_read) return false;
+        if (search) {
+          var hay = (m.user_name + ' ' + m.user_email + ' ' + m.subject + ' ' + m.body).toLowerCase();
+          if (hay.indexOf(search) === -1) return false;
+        }
+        return true;
+      });
+      var tbody = document.getElementById('msg-tbody');
+      var empty = document.getElementById('msg-empty');
+      if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      var catLabels = { revision: 'Revision', deploy: 'Deploy', general: 'General', bug: 'Bug', other: 'Other' };
+      var catColors = { revision: '#fd7e14', deploy: '#28a745', general: '#6c757d', bug: '#dc3545', other: '#17a2b8' };
+      tbody.innerHTML = filtered.map(function(m) {
+        var unread = !m.is_read;
+        var dt = new Date(m.created_at + 'Z');
+        var dateStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        return '<tr style="' + (unread ? 'background:#f0f5ff;font-weight:600;' : '') + '">' +
+          '<td>' + (unread ? '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1e3c72;"></span>' : '') + '</td>' +
+          '<td>' + escapeHtml(m.user_name) + '<br><small style="font-weight:400;color:#888;">' + escapeHtml(m.user_email) + '</small></td>' +
+          '<td>' + escapeHtml(m.subject || '(no subject)') + '<br><small style="font-weight:400;color:#666;">' + escapeHtml(m.body.substring(0, 80)) + (m.body.length > 80 ? '...' : '') + '</small></td>' +
+          '<td><span style="background:' + (catColors[m.category] || '#6c757d') + ';color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">' + (catLabels[m.category] || m.category) + '</span></td>' +
+          '<td style="white-space:nowrap;font-weight:400;font-size:13px;">' + dateStr + '</td>' +
+          '<td>' +
+            '<button class="btn btn-sm btn-outline-primary" style="border-radius:8px;" onclick="viewMessage(' + m.id + ')" title="View"><i class="fa fa-eye"></i></button> ' +
+            (unread ? '<button class="btn btn-sm btn-outline-secondary" style="border-radius:8px;" onclick="markMsgRead(' + m.id + ')" title="Mark read"><i class="fa fa-check"></i></button> ' : '') +
+            '<button class="btn btn-sm btn-outline-danger" style="border-radius:8px;" onclick="deleteMessage(' + m.id + ')" title="Delete"><i class="fa fa-trash"></i></button>' +
+          '</td></tr>';
+      }).join('');
+    }
+
+    document.getElementById('msg-search').addEventListener('input', renderMessages);
+    document.getElementById('msg-cat-filter').addEventListener('change', renderMessages);
+    document.getElementById('msg-read-filter').addEventListener('change', renderMessages);
+
+    window.markMsgRead = function(id) {
+      fetch(API + '/admin/messages/' + id + '/read', { method: 'POST', headers: authHeaders() })
+      .then(function() { loadMessages(); loadUnreadBadge(); });
+    };
+
+    window.deleteMessage = function(id) {
+      if (!confirm('Delete this message? This cannot be undone.')) return;
+      fetch(API + '/admin/messages/' + id, { method: 'DELETE', headers: authHeaders() })
+      .then(function() { loadMessages(); loadUnreadBadge(); });
+    };
+
+    window.viewMessage = function(id) {
+      var m = allMessages.find(function(x) { return x.id === id; });
+      if (!m) return;
+      // mark read
+      if (!m.is_read) markMsgRead(id);
+      var catLabels = { revision: 'Revision Request', deploy: 'Deploy Request', general: 'General', bug: 'Bug Report', other: 'Other' };
+      var dt = new Date(m.created_at + 'Z');
+      var html = '<div style="margin-bottom:15px;">' +
+        '<p style="margin:0 0 4px;"><strong>From:</strong> ' + escapeHtml(m.user_name) + ' (' + escapeHtml(m.user_email) + ')' + (m.user_company ? ' — ' + escapeHtml(m.user_company) : '') + '</p>' +
+        '<p style="margin:0 0 4px;"><strong>Category:</strong> ' + (catLabels[m.category] || m.category) + '</p>' +
+        '<p style="margin:0 0 4px;"><strong>Date:</strong> ' + dt.toLocaleString() + '</p>' +
+        (m.subject ? '<p style="margin:0 0 4px;"><strong>Subject:</strong> ' + escapeHtml(m.subject) + '</p>' : '') +
+        '</div>' +
+        '<div style="background:#f7f9fc;border-radius:10px;padding:15px;margin-bottom:20px;white-space:pre-wrap;font-size:14px;">' + escapeHtml(m.body) + '</div>';
+      if (m.admin_reply) {
+        var rdt = new Date(m.replied_at + 'Z');
+        html += '<div style="border-left:3px solid #1e3c72;padding-left:15px;margin-bottom:15px;"><p style="font-weight:600;color:#1e3c72;margin:0 0 4px;">Your Reply <small style="font-weight:400;color:#888;">(' + rdt.toLocaleString() + ')</small></p>' +
+          '<div style="white-space:pre-wrap;font-size:14px;">' + escapeHtml(m.admin_reply) + '</div></div>';
+      }
+      html += '<hr><label style="font-weight:600;font-size:14px;">' + (m.admin_reply ? 'Update Reply' : 'Reply') + '</label>' +
+        '<textarea id="msg-reply-text" class="form-control" rows="3" style="border-radius:10px;padding:10px 15px;margin-top:6px;" placeholder="Write a reply...">' + escapeHtml(m.admin_reply || '') + '</textarea>' +
+        '<button class="btn btn-es mt-2" onclick="sendReply(' + m.id + ')" style="border-radius:10px;">Send Reply</button>';
+      document.getElementById('msg-view-body').innerHTML = html;
+      new bootstrap.Modal(document.getElementById('msgViewModal')).show();
+    };
+
+    window.sendReply = function(id) {
+      var text = document.getElementById('msg-reply-text').value.trim();
+      if (!text) return;
+      fetch(API + '/admin/messages/' + id + '/reply', {
+        method: 'POST', headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+        body: JSON.stringify({ reply: text })
+      }).then(function(r) { return r.json(); }).then(function() {
+        bootstrap.Modal.getInstance(document.getElementById('msgViewModal')).hide();
+        loadMessages(); loadUnreadBadge();
+      });
+    };
+
+    // ═══ ngrok Tunnel Settings ═══
+    function loadNgrokConfig() {
+      var status = document.getElementById('ngrok-status');
+      var link = document.getElementById('ngrok-link');
+      status.textContent = 'Checking...';
+      fetch(API + '/admin/site-config/ngrok', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.active) {
+          status.innerHTML = '<i class="fa fa-check-circle" style="color:#28a745;"></i> <strong>Connected</strong> — Tunnel active at <code>' + escapeHtml(d.ngrok_url) + '</code>';
+          status.style.background = '#d4edda'; status.style.color = '#155724';
+          document.getElementById('ngrok-url').value = d.ngrok_url;
+          link.style.display = 'block';
+          link.innerHTML = '<strong>Public site:</strong> <a href="' + escapeHtml(d.ngrok_url) + '" target="_blank" style="color:#1e3c72;">' + escapeHtml(d.ngrok_url) + '</a>' +
+            ' &nbsp;|&nbsp; <strong>Stripe webhook URL:</strong> <code>' + escapeHtml(d.ngrok_url) + '/api/stripe-webhook</code>';
+        } else {
+          status.innerHTML = '<i class="fa fa-minus-circle" style="color:#999;"></i> <strong>Not connected</strong> — Run <code>ngrok http 5000</code> and paste the URL below.';
+          status.style.background = '#f0f0f0'; status.style.color = '#555';
+          link.style.display = 'none';
+        }
+      }).catch(function() { status.textContent = 'Error loading config'; });
+    }
+    loadNgrokConfig();
+
+    window.saveNgrokUrl = function() {
+      var url = document.getElementById('ngrok-url').value.trim();
+      if (!url) return;
+      var alert = document.getElementById('ngrok-alert');
+      fetch(API + '/admin/site-config/ngrok', {
+        method: 'PUT', headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+        body: JSON.stringify({ ngrok_url: url })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.error) { alert.textContent = d.error; alert.style.background = '#f8d7da'; alert.style.color = '#721c24'; alert.style.display = 'block'; return; }
+        alert.textContent = 'ngrok URL saved! Stripe redirects and webhooks will use this URL.';
+        alert.style.background = '#d4edda'; alert.style.color = '#155724'; alert.style.display = 'block';
+        loadNgrokConfig();
+        setTimeout(function() { alert.style.display = 'none'; }, 4000);
+      });
+    };
+
+    window.clearNgrokUrl = function() {
+      fetch(API + '/admin/site-config/ngrok', {
+        method: 'PUT', headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+        body: JSON.stringify({ ngrok_url: '' })
+      }).then(function() {
+        document.getElementById('ngrok-url').value = '';
+        var alert = document.getElementById('ngrok-alert');
+        alert.textContent = 'ngrok disconnected. Back to localhost mode.';
+        alert.style.background = '#fff3cd'; alert.style.color = '#856404'; alert.style.display = 'block';
+        loadNgrokConfig();
+        setTimeout(function() { alert.style.display = 'none'; }, 4000);
+      });
+    };
+
+    // ═══ Porkbun API Settings ═══
+    function loadPorkbunConfig() {
+      var status = document.getElementById('pb-status');
+      status.textContent = 'Loading configuration...';
+      status.style.background = '#f0f0f0';
+      status.style.color = '#555';
+      fetch(API + '/admin/site-config/porkbun', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.configured) {
+          status.innerHTML = '<i class="fa fa-check-circle" style="color:#28a745;"></i> <strong>Connected</strong> — Keys configured via ' + d.source + '. API Key: <code>' + esc(d.apikey_masked) + '</code>';
+          status.style.background = '#d4edda';
+          status.style.color = '#155724';
+        } else if (d.source === 'env') {
+          status.innerHTML = '<i class="fa fa-check-circle" style="color:#28a745;"></i> <strong>Connected</strong> — Keys loaded from environment variables.';
+          status.style.background = '#d4edda';
+          status.style.color = '#155724';
+        } else {
+          status.innerHTML = '<i class="fa fa-exclamation-triangle" style="color:#e6a817;"></i> <strong>Not configured</strong> — Domain checks will use tldx fallback only. Enter your Porkbun API keys below.';
+          status.style.background = '#fff3cd';
+          status.style.color = '#856404';
+        }
+      })
+      .catch(function() {
+        status.textContent = 'Could not load config.';
+        status.style.background = '#f8d7da';
+        status.style.color = '#721c24';
+      });
+    }
+
+    window.savePorkbunKeys = function() {
+      var alert = document.getElementById('pb-alert');
+      var btn = document.getElementById('pb-save-btn');
+      var apikey = document.getElementById('pb-apikey').value.trim();
+      var secret = document.getElementById('pb-secret').value.trim();
+      if (!apikey || !secret) {
+        alert.textContent = 'Both API Key and Secret API Key are required.';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        alert.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      fetch(API + '/admin/site-config/porkbun', {
+        method: 'PUT', headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+        body: JSON.stringify({ apikey: apikey, secretapikey: secret })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          alert.textContent = 'Porkbun API keys saved successfully!';
+          alert.style.background = '#d4edda'; alert.style.color = '#155724';
+          alert.style.display = 'block';
+          document.getElementById('pb-apikey').value = '';
+          document.getElementById('pb-secret').value = '';
+          loadPorkbunConfig();
+        } else {
+          alert.textContent = d.error || 'Save failed';
+          alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+          alert.style.display = 'block';
+        }
+      })
+      .catch(function() {
+        alert.textContent = 'Could not connect to server.';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        alert.style.display = 'block';
+      })
+      .finally(function() { btn.disabled = false; });
+    };
+
+    window.testPorkbunKeys = function() {
+      var alert = document.getElementById('pb-alert');
+      var btn = document.getElementById('pb-test-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Testing...';
+      fetch(API + '/admin/porkbun-test', {
+        method: 'POST', headers: authHeaders()
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (res.ok && res.data.ok) {
+          alert.innerHTML = '<i class="fa fa-check-circle"></i> Connection successful! Your IP: <code>' + esc(res.data.ip) + '</code>';
+          alert.style.background = '#d4edda'; alert.style.color = '#155724';
+        } else {
+          alert.textContent = res.data.error || 'Connection test failed.';
+          alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        }
+        alert.style.display = 'block';
+      })
+      .catch(function() {
+        alert.textContent = 'Could not connect to server.';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        alert.style.display = 'block';
+      })
+      .finally(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-plug"></i> Test Connection';
+      });
+    };
+
+    // ═══ Stripe Config ═══
+    function loadStripeConfig() {
+      var status = document.getElementById('stripe-status');
+      status.textContent = 'Loading configuration...';
+      status.style.background = '#f0f0f0';
+      status.style.color = '#555';
+      fetch(API + '/admin/site-config/stripe', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.configured) {
+          status.innerHTML = '<i class="fa fa-check-circle" style="color:#28a745;"></i> <strong>Connected</strong> — Keys configured via ' + esc(d.source) + '. Publishable: <code>' + esc(d.publishable_masked) + '</code>';
+          status.style.background = '#d4edda';
+          status.style.color = '#155724';
+        } else {
+          status.innerHTML = '<i class="fa fa-exclamation-triangle" style="color:#e6a817;"></i> <strong>Not configured</strong> — Deploy payments will skip Stripe checkout. Enter your Stripe API keys below.';
+          status.style.background = '#fff3cd';
+          status.style.color = '#856404';
+        }
+      })
+      .catch(function() {
+        status.textContent = 'Could not load config.';
+        status.style.background = '#f8d7da';
+        status.style.color = '#721c24';
+      });
+    }
+
+    window.saveStripeKeys = function() {
+      var alert = document.getElementById('stripe-alert');
+      var btn = document.getElementById('stripe-save-btn');
+      var pk = document.getElementById('stripe-pk').value.trim();
+      var sk = document.getElementById('stripe-sk').value.trim();
+      var wh = document.getElementById('stripe-wh').value.trim();
+      if (!pk || !sk) {
+        alert.textContent = 'Publishable Key and Secret Key are both required.';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        alert.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      fetch(API + '/admin/site-config/stripe', {
+        method: 'PUT', headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+        body: JSON.stringify({ publishable_key: pk, secret_key: sk, webhook_secret: wh })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          alert.textContent = 'Stripe API keys saved successfully!';
+          alert.style.background = '#d4edda'; alert.style.color = '#155724';
+          alert.style.display = 'block';
+          document.getElementById('stripe-pk').value = '';
+          document.getElementById('stripe-sk').value = '';
+          document.getElementById('stripe-wh').value = '';
+          loadStripeConfig();
+        } else {
+          alert.textContent = d.error || 'Save failed';
+          alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+          alert.style.display = 'block';
+        }
+      })
+      .catch(function() {
+        alert.textContent = 'Could not connect to server.';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        alert.style.display = 'block';
+      })
+      .finally(function() { btn.disabled = false; });
+    };
+
+    // ═══ Email (SMTP) Config ═══
+    function loadEmailConfig() {
+      var status = document.getElementById('email-status');
+      fetch(API + '/admin/site-config/email', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var c = d.config || d;
+        if (c.smtp_host) {
+          document.getElementById('smtp-host').value = c.smtp_host;
+          document.getElementById('smtp-port').value = c.smtp_port || 587;
+          document.getElementById('smtp-user').value = c.smtp_user || '';
+          document.getElementById('smtp-pass').value = '';
+          document.getElementById('smtp-pass').placeholder = c.smtp_pass_masked ? '••••••••  (saved)' : 'App password or SMTP password';
+          document.getElementById('smtp-from-name').value = c.smtp_from_name || '';
+          document.getElementById('smtp-from-email').value = c.smtp_from_email || '';
+          status.innerHTML = '<i class="fa fa-check-circle" style="color:#28a745;margin-right:6px;"></i>SMTP configured — <strong>' + c.smtp_host + ':' + (c.smtp_port || 587) + '</strong>';
+          status.style.background = '#d4edda'; status.style.color = '#155724';
+        } else {
+          status.innerHTML = '<i class="fa fa-exclamation-circle" style="color:#856404;margin-right:6px;"></i>Not configured yet. Fill in your SMTP details below.';
+          status.style.background = '#fff3cd'; status.style.color = '#856404';
+        }
+      })
+      .catch(function() {
+        status.innerHTML = '<i class="fa fa-times-circle" style="color:#dc3545;margin-right:6px;"></i>Could not load email config.';
+        status.style.background = '#f8d7da'; status.style.color = '#721c24';
+      });
+    }
+
+    window.saveEmailConfig = function() {
+      var alert = document.getElementById('email-alert');
+      var body = {
+        smtp_host: document.getElementById('smtp-host').value.trim(),
+        smtp_port: parseInt(document.getElementById('smtp-port').value) || 587,
+        smtp_user: document.getElementById('smtp-user').value.trim(),
+        smtp_from_name: document.getElementById('smtp-from-name').value.trim(),
+        smtp_from_email: document.getElementById('smtp-from-email').value.trim()
+      };
+      var pass = document.getElementById('smtp-pass').value;
+      if (pass) body.smtp_pass = pass;
+      if (!body.smtp_host || !body.smtp_user) {
+        alert.textContent = 'SMTP host and username are required.';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        alert.style.display = 'block'; return;
+      }
+      alert.style.display = 'none';
+      fetch(API + '/admin/site-config/email', {
+        method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify(body)
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          alert.innerHTML = '<i class="fa fa-check-circle"></i> Email settings saved.';
+          alert.style.background = '#d4edda'; alert.style.color = '#155724';
+        } else {
+          alert.textContent = d.error || 'Save failed';
+          alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        }
+        alert.style.display = 'block';
+        loadEmailConfig();
+      })
+      .catch(function() {
+        alert.textContent = 'Could not connect to server.';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        alert.style.display = 'block';
+      });
+    };
+
+    window.testEmail = function() {
+      var alert = document.getElementById('email-alert');
+      var recipient = prompt('Send test email to:', document.getElementById('smtp-user').value || '');
+      if (!recipient) return;
+      alert.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending test email...';
+      alert.style.background = '#d1ecf1'; alert.style.color = '#0c5460';
+      alert.style.display = 'block';
+      fetch(API + '/admin/site-config/email/test', {
+        method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ to: recipient })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          alert.innerHTML = '<i class="fa fa-check-circle"></i> Test email sent to <strong>' + recipient + '</strong>';
+          alert.style.background = '#d4edda'; alert.style.color = '#155724';
+        } else {
+          alert.textContent = d.error || 'Test failed';
+          alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+        }
+      })
+      .catch(function() {
+        alert.textContent = 'Could not connect to server.';
+        alert.style.background = '#f8d7da'; alert.style.color = '#721c24';
+      });
+    };
+
+    // ═══ Coupon Management ═══
+    function loadCoupons() {
+      var area = document.getElementById('coupon-list-area');
+      fetch(API + '/admin/coupons', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var coupons = d.coupons || [];
+        if (coupons.length === 0) {
+          area.innerHTML = '<div style="text-align:center;padding:16px;color:#aaa;font-size:13px;border:1px dashed #ddd;border-radius:10px;">No coupons created yet.</div>';
+          return;
+        }
+        var html = '<table class="table table-sm" style="font-size:13px;margin-bottom:0;"><thead><tr style="background:#f5f7fa;"><th>Code</th><th>Discount</th><th>1st Mo Free</th><th>Used</th><th>Expires</th><th>Status</th><th></th></tr></thead><tbody>';
+        coupons.forEach(function(c) {
+          var discLabel = c.discount_type === 'percent' ? (c.discount_value + '%') : ('$' + Number(c.discount_value).toFixed(2));
+          var usedLabel = c.max_uses > 0 ? (c.times_used + '/' + c.max_uses) : (c.times_used + '/∞');
+          var expLabel = c.expires_at || '—';
+          var freeMonth = c.free_first_month ? '<span style="color:#28a745;"><i class="fa fa-check"></i></span>' : '—';
+          var statusBadge = c.active ? '<span style="color:#28a745;font-weight:600;">Active</span>' : '<span style="color:#dc3545;font-weight:600;">Inactive</span>';
+          html += '<tr>' +
+            '<td><code style="font-size:13px;font-weight:700;color:#1e3c72;">' + esc(c.code) + '</code></td>' +
+            '<td>' + discLabel + '</td>' +
+            '<td>' + freeMonth + '</td>' +
+            '<td>' + usedLabel + '</td>' +
+            '<td>' + expLabel + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td style="text-align:right;">' +
+              '<button class="btn btn-sm btn-outline-' + (c.active ? 'warning' : 'success') + '" onclick="toggleCoupon(' + c.id + ',' + (c.active ? 0 : 1) + ')" style="font-size:11px;padding:2px 8px;margin-right:4px;">' + (c.active ? 'Disable' : 'Enable') + '</button>' +
+              '<button class="btn btn-sm btn-outline-danger" onclick="deleteCoupon(' + c.id + ',\'' + esc(c.code) + '\')" style="font-size:11px;padding:2px 8px;"><i class="fa fa-trash"></i></button>' +
+            '</td></tr>';
+        });
+        html += '</tbody></table>';
+        area.innerHTML = html;
+      })
+      .catch(function() { area.innerHTML = '<div style="color:#dc3545;font-size:13px;">Failed to load coupons.</div>'; });
+    }
+
+    window.createCoupon = function() {
+      var alert = document.getElementById('coupon-create-alert');
+      var btn = document.getElementById('create-coupon-btn');
+      var code = document.getElementById('new-coupon-code').value.trim();
+      var dtype = document.getElementById('new-coupon-type').value;
+      var dval = parseFloat(document.getElementById('new-coupon-value').value) || 0;
+      var maxu = parseInt(document.getElementById('new-coupon-max').value) || 0;
+      var exp = document.getElementById('new-coupon-expires').value || '';
+      var freeMonth = document.getElementById('new-coupon-free-month').checked;
+      if (!code) { alert.textContent = 'Coupon code is required.'; alert.style.background = '#f8d7da'; alert.style.color = '#721c24'; alert.style.display = 'block'; return; }
+      if (dval <= 0) { alert.textContent = 'Discount value must be positive.'; alert.style.background = '#f8d7da'; alert.style.color = '#721c24'; alert.style.display = 'block'; return; }
+      btn.disabled = true;
+      fetch(API + '/admin/coupons', {
+        method: 'POST', headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+        body: JSON.stringify({ code: code, discount_type: dtype, discount_value: dval, max_uses: maxu, free_first_month: freeMonth, expires_at: exp || null })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (res.ok && res.data.ok) {
+          alert.textContent = 'Coupon created!'; alert.style.background = '#d4edda'; alert.style.color = '#155724'; alert.style.display = 'block';
+          document.getElementById('new-coupon-code').value = '';
+          document.getElementById('new-coupon-value').value = '';
+          document.getElementById('new-coupon-max').value = '';
+          document.getElementById('new-coupon-expires').value = '';
+          loadCoupons();
+        } else {
+          alert.textContent = res.data.error || 'Failed to create coupon.'; alert.style.background = '#f8d7da'; alert.style.color = '#721c24'; alert.style.display = 'block';
+        }
+      })
+      .catch(function() { alert.textContent = 'Could not connect.'; alert.style.background = '#f8d7da'; alert.style.color = '#721c24'; alert.style.display = 'block'; })
+      .finally(function() { btn.disabled = false; });
+    };
+
+    window.toggleCoupon = function(id, active) {
+      fetch(API + '/admin/coupons/' + id, {
+        method: 'PUT', headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+        body: JSON.stringify({ active: active })
+      }).then(function() { loadCoupons(); });
+    };
+
+    window.deleteCoupon = function(id, code) {
+      if (!confirm('Delete coupon "' + code + '"?')) return;
+      fetch(API + '/admin/coupons/' + id, {
+        method: 'DELETE', headers: authHeaders()
+      }).then(function() { loadCoupons(); });
+    };
+
   })();
   </script>
 </body>
