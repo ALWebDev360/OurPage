@@ -1,0 +1,21 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Fly CLI
+        uses: superfly/flyctl-actions@v2
+        with:
+          fly_token: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Deploy to Fly
+        run: flyctl deploy --config fly.toml --remote-only --strategy immediate
