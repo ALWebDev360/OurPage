@@ -116,7 +116,7 @@ https://templatemo.com/tm-562-space-dynamic
       <div class="row">
         <div class="col-lg-4">
           <div class="left-image wow fadeIn" data-wow-duration="1s" data-wow-delay="0.2s">
-            <img src="assets/images/about-left-image.png" alt="person graphic">
+            <img src="assets/images/about-left-image.png" alt="person graphic" loading="lazy">
           </div>
         </div>
         <div class="col-lg-8 align-self-center">
@@ -178,7 +178,7 @@ https://templatemo.com/tm-562-space-dynamic
       <div class="row">
         <div class="col-lg-6 align-self-center  wow fadeInLeft" data-wow-duration="1s" data-wow-delay="0.2s">
           <div class="left-image">
-            <img src="assets/images/services-left-image.png" alt="">
+            <img src="assets/images/services-left-image.png" alt="" loading="lazy">
           </div>
         </div>
         <div class="col-lg-6 wow fadeInRight" data-wow-duration="1s" data-wow-delay="0.2s">
@@ -350,7 +350,7 @@ https://templatemo.com/tm-562-space-dynamic
       <div class="row">
         <div class="col-lg-6 wow fadeInUp" data-wow-duration="1s" data-wow-delay="0.25s">
           <div class="left-image">
-            <a href="#"><img src="assets/images/big-blog-thumb.jpg" alt="Workspace Desktop"></a>
+            <a href="#"><img src="assets/images/big-blog-thumb.jpg" alt="Workspace Desktop" loading="lazy"></a>
             <div class="info">
               <div class="inner-content">
                 <ul>
@@ -498,7 +498,7 @@ https://templatemo.com/tm-562-space-dynamic
               </div>
             </div>
             <div class="contact-dec">
-              <img src="assets/images/contact-decoration.png" alt="">
+              <img src="assets/images/contact-decoration.png" alt="" loading="lazy">
             </div>
           </form>
         </div>
@@ -606,6 +606,11 @@ https://templatemo.com/tm-562-space-dynamic
       </div>
     </div>
   </footer>
+
+  <!-- Mobile Sticky CTA -->
+  <div class="mobile-sticky-cta" id="mobile-sticky-cta">
+    <a href="#get-started" class="open-auth-modal">Get Started Free</a>
+  </div>
 
   <!-- ══════ Auth & Scheduling Modals ══════ -->
 
@@ -1587,6 +1592,41 @@ https://templatemo.com/tm-562-space-dynamic
 
     // Init
     updateAuthUI();
+  })();
+  </script>
+
+  <!-- Mobile Sticky CTA visibility logic -->
+  <script>
+  (function() {
+    var stickyEl = document.getElementById('mobile-sticky-cta');
+    if (!stickyEl) return;
+
+    function isMobile() { return window.innerWidth <= 768; }
+
+    // Hide on desktop
+    function toggleSticky() {
+      if (!isMobile()) {
+        stickyEl.style.display = 'none';
+      } else {
+        stickyEl.style.display = 'flex';
+      }
+    }
+
+    // Hide sticky CTA when user is near top (hero is visible)
+    var lastScroll = 0;
+    window.addEventListener('scroll', function() {
+      if (!isMobile()) return;
+      var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+      if (scrollY < 300) {
+        stickyEl.style.transform = 'translateY(100%)';
+      } else {
+        stickyEl.style.transform = 'translateY(0)';
+      }
+      lastScroll = scrollY;
+    }, { passive: true });
+
+    window.addEventListener('resize', toggleSticky);
+    toggleSticky();
   })();
   </script>
 
