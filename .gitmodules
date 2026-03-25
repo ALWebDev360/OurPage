@@ -1,0 +1,3 @@
+[submodule "SEOstats"]
+	path = SEOstats
+	url = https://github.com/eyecatchup/SEOstats.git
