@@ -1493,9 +1493,9 @@ responsive
     text-align: center;
     margin-bottom: 45px;
   }
-  .main-banner:after {
-    top: 76px;
-    z-index: -1;
+  .main-banner:after,
+  .main-banner:before {
+    display: none;
   }
   .main-banner .left-content form,
   .main-banner .left-content form input {
@@ -1689,6 +1689,11 @@ responsive
     display: inline-flex !important;
     border-radius: 8px !important;
     border: 1px solid rgba(0,0,0,.08) !important;
+    flex-shrink: 0 !important;
+  }
+
+  .header-area .main-nav .logo {
+    margin-right: 12px !important;
   }
 
   .header-area .main-nav .menu-trigger span,
