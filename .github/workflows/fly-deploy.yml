@@ -15,12 +15,13 @@ jobs:
       - name: Install flyctl
         run: |
           curl -L https://fly.io/install.sh | sh
-          echo "export PATH=$HOME/.fly/bin:$PATH" >> $GITHUB_ENV
+          echo "PATH=$HOME/.fly/bin:$PATH" >> $GITHUB_ENV
+      - name: Debug PATH
+        run: |
+          echo "DEBUG PATH=$PATH"
+          echo "Contents of /home/runner/.fly/bin:"
+          ls -l /home/runner/.fly/bin
       - name: Authenticate Fly
-        run: |
-          source $GITHUB_ENV
-          flyctl auth login --token ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl auth login --token ${{ secrets.FLY_API_TOKEN }}
       - name: Deploy to Fly
-        run: |
-          source $GITHUB_ENV
-          flyctl deploy --config fly.toml --remote-only --strategy immediate
+        run: flyctl deploy --config fly.toml --remote-only --strategy immediate
