@@ -338,7 +338,7 @@ STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "sk_test_REPLACE_ME")
 STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "pk_test_REPLACE_ME")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "whsec_REPLACE_ME")
 STRIPE_CURRENCY = "usd"
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://127.0.0.1:8080")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://elevatedsolutions.design")
 stripe.api_key = STRIPE_SECRET_KEY
 
 # --- Porkbun API Configuration ---
