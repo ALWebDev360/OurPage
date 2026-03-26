@@ -1231,14 +1231,19 @@ https://templatemo.com/tm-562-space-dynamic
       var user = getUser();
       var navBtn = document.querySelector('.nav .get-started-btn');
       if (navBtn) {
+        var parentLi = navBtn.closest('li');
         if (user) {
           navBtn.textContent = escapeHtml(user.name.split(' ')[0]);
           navBtn.href = 'dashboard.html';
           navBtn.classList.remove('open-auth-modal');
+          // Unbind the scroll-to-section handler so the link navigates normally
+          if (parentLi) parentLi.classList.remove('scroll-to-section');
+          $(navBtn).off('click');
         } else {
           navBtn.textContent = 'Get Started';
           navBtn.href = '#';
           navBtn.classList.add('open-auth-modal');
+          if (parentLi) parentLi.classList.add('scroll-to-section');
         }
       }
     }
