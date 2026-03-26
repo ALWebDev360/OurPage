@@ -1229,9 +1229,17 @@ https://templatemo.com/tm-562-space-dynamic
     // ── Update nav based on auth state ──
     function updateAuthUI() {
       var user = getUser();
-      var navGetStarted = document.querySelector('.nav .main-red-button');
-      if (user && navGetStarted) {
-        navGetStarted.innerHTML = '<a href="dashboard.html" style="display:inline-block;vertical-align:middle;">' + escapeHtml(user.name.split(' ')[0]) + '</a>';
+      var navBtn = document.querySelector('.nav .get-started-btn');
+      if (navBtn) {
+        if (user) {
+          navBtn.textContent = escapeHtml(user.name.split(' ')[0]);
+          navBtn.href = 'dashboard.html';
+          navBtn.classList.remove('open-auth-modal');
+        } else {
+          navBtn.textContent = 'Get Started';
+          navBtn.href = '#';
+          navBtn.classList.add('open-auth-modal');
+        }
       }
     }
 
