@@ -605,7 +605,8 @@
     function handleAuthError() {
       localStorage.removeItem('es_token');
       localStorage.removeItem('es_user');
-      window.location.href = 'index.html';
+      document.getElementById('dashboard-app').style.display = 'none';
+      document.getElementById('no-auth-screen').style.display = 'flex';
     }
 
     var typeLabels = {
