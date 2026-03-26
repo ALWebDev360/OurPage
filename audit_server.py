@@ -206,6 +206,20 @@ def get_email_config():
             return cfg
     except Exception:
         pass
+    # Fallback: direct connection (for background threads without Flask context)
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        keys = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_name', 'smtp_from_email']
+        cfg = {}
+        for k in keys:
+            row = conn.execute("SELECT value FROM site_config WHERE key = ?", (k,)).fetchone()
+            cfg[k] = row["value"] if row else ""
+        conn.close()
+        if cfg['smtp_host'] and cfg['smtp_user'] and cfg['smtp_pass']:
+            return cfg
+    except Exception:
+        pass
     return None
 
 
