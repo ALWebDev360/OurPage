@@ -82,9 +82,31 @@
       .sidebar-nav li a { justify-content: center; padding: 15px; }
       .main { margin-left: 60px; padding: 20px; }
     }
+    /* Gift overlay */
+    #gift-overlay {
+      position: fixed; inset: 0; z-index: 99999;
+      background: rgba(0,0,0,0.65);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 1; transition: opacity 0.6s ease;
+    }
+    #gift-overlay.fade-out { opacity: 0; pointer-events: none; }
+    #gift-lottie { width: 280px; height: 280px; }
+    #gift-overlay .gift-text {
+      color: #fff; font-size: 22px; font-weight: 600; margin-top: 10px;
+      letter-spacing: 0.5px; text-align: center; opacity: 0;
+      animation: giftTextIn 0.8s ease 0.6s forwards;
+    }
+    @keyframes giftTextIn { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(12px); } }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
 <body>
+
+  <!-- ═══ Gift Welcome Overlay ═══ -->
+  <div id="gift-overlay" style="display:none;">
+    <div id="gift-lottie"></div>
+    <div class="gift-text">A gift, from us to you</div>
+  </div>
 
   <!-- ═══ No-Auth Redirect ═══ -->
   <div id="no-auth-screen" style="display:none;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3c72,#2a5298);">
@@ -506,6 +528,36 @@
     }
     document.getElementById('no-auth-screen').style.display = 'none';
     document.getElementById('dashboard-app').style.display = 'block';
+
+    // ── Gift animation on first visit ──
+    (function() {
+      var giftKey = 'es_gift_shown_' + (user.id || user.email);
+      if (!sessionStorage.getItem(giftKey)) {
+        sessionStorage.setItem(giftKey, '1');
+        var overlay = document.getElementById('gift-overlay');
+        overlay.style.display = 'flex';
+        var anim = lottie.loadAnimation({
+          container: document.getElementById('gift-lottie'),
+          renderer: 'svg',
+          loop: false,
+          autoplay: true,
+          path: 'assets/lottie/Gift%20Box%20Lottie%20Animation.json'
+        });
+        anim.addEventListener('complete', function() {
+          setTimeout(function() {
+            overlay.classList.add('fade-out');
+            setTimeout(function() { overlay.remove(); }, 700);
+          }, 1200);
+        });
+        // Fallback if animation is very long
+        setTimeout(function() {
+          if (overlay.parentNode) {
+            overlay.classList.add('fade-out');
+            setTimeout(function() { overlay.remove(); }, 700);
+          }
+        }, 8000);
+      }
+    })();
 
     function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
 
