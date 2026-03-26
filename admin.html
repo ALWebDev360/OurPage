@@ -686,6 +686,38 @@
     </div>
   </div>
 
+  <!-- Coupon Apply Modal -->
+  <div class="modal fade" id="couponApplyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+      <div class="modal-content" style="border-radius:16px;overflow:hidden;border:none;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#1e3c72,#2a5298);border:none;padding:20px 25px;">
+          <h5 class="modal-title" style="color:#fff;font-weight:700;font-size:16px;"><i class="fa fa-tag" style="margin-right:8px;"></i>Apply Coupon to <span id="coupon-apply-username"></span></h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="padding:25px;">
+          <div id="coupon-apply-alert" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:15px;font-size:13px;"></div>
+
+          <label style="font-weight:600;font-size:13px;margin-bottom:6px;display:block;">Select a coupon</label>
+          <select id="coupon-apply-select" class="form-select" style="border-radius:10px;margin-bottom:15px;">
+            <option value="">Loading coupons...</option>
+          </select>
+
+          <div id="coupon-apply-preview" style="display:none;background:#f7f9fc;border-radius:10px;padding:14px 18px;margin-bottom:15px;">
+            <div id="coupon-preview-detail" style="font-size:14px;color:#333;"></div>
+          </div>
+
+          <button type="button" class="btn w-100" id="coupon-apply-btn" onclick="applyCouponToUser()" style="background:#28a745;color:#fff;font-weight:600;border-radius:10px;padding:12px;border:none;font-size:14px;">
+            <i class="fa fa-check" style="margin-right:6px;"></i>Apply Coupon
+          </button>
+
+          <hr style="margin:20px 0 15px;">
+          <h6 style="font-weight:700;font-size:13px;color:#1e3c72;margin-bottom:10px;">Applied Coupons</h6>
+          <div id="coupon-applied-list" style="font-size:13px;color:#666;">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="vendor/jquery/jquery.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -908,6 +940,9 @@
           var dcBtn = u.role === 'client'
             ? '<button class="btn btn-sm me-1 btn-outline-warning" onclick="openDeployConfig(' + u.id + ', \'' + esc(u.name).replace(/'/g, "\\'") + '\')" title="Deploy pricing"><i class="fa fa-rocket"></i></button>'
             : '';
+          var couponBtn = u.role === 'client'
+            ? '<button class="btn btn-sm me-1 btn-outline-success" onclick="openCouponDropdown(' + u.id + ', \'' + esc(u.name).replace(/'/g, "\\'") + '\')" title="Apply coupon"><i class="fa fa-tag"></i></button>'
+            : '';
           var viewBtn = '';
           if (u.role === 'client' && u.demo_preview && u.demo_preview_site) {
             var subpath = distMap[u.demo_preview_site] ? u.demo_preview_site + '/dist/index.html' : u.demo_preview_site + '/index.html';
@@ -923,6 +958,7 @@
             + ppBtn
             + dpBtn
             + dcBtn
+            + couponBtn
             + viewBtn
             + '<button class="btn btn-sm btn-outline-es me-1" onclick="editUser(' + u.id + ')"><i class="fa fa-pencil"></i></button>'
             + '<button class="btn btn-sm btn-outline-danger" onclick="deleteUser(' + u.id + ', \'' + esc(u.name).replace(/'/g, "\\'") + '\')"><i class="fa fa-trash"></i></button>'
@@ -2036,6 +2072,130 @@
       fetch(API + '/admin/coupons/' + id, {
         method: 'DELETE', headers: authHeaders()
       }).then(function() { loadCoupons(); });
+    };
+
+    // ── Apply Coupon to User ────────────────────────────
+    var couponApplyModal = new bootstrap.Modal(document.getElementById('couponApplyModal'));
+    var couponApplyUserId = null;
+    var couponApplyAlert = document.getElementById('coupon-apply-alert');
+
+    function showCouponAlert(msg, isError) {
+      couponApplyAlert.style.display = 'block';
+      couponApplyAlert.style.background = isError ? '#f8d7da' : '#d4edda';
+      couponApplyAlert.style.color = isError ? '#721c24' : '#155724';
+      couponApplyAlert.textContent = msg;
+    }
+
+    window.openCouponDropdown = function(userId, userName) {
+      couponApplyUserId = userId;
+      couponApplyAlert.style.display = 'none';
+      document.getElementById('coupon-apply-username').textContent = userName;
+      document.getElementById('coupon-apply-select').innerHTML = '<option value="">Loading...</option>';
+      document.getElementById('coupon-apply-preview').style.display = 'none';
+      document.getElementById('coupon-applied-list').textContent = 'Loading...';
+      couponApplyModal.show();
+
+      // Load active coupons and user's applied coupons in parallel
+      Promise.all([
+        fetch(API + '/admin/coupons', { headers: authHeaders() }).then(function(r) { return r.json(); }),
+        fetch(API + '/admin/users/' + userId + '/coupons', { headers: authHeaders() }).then(function(r) { return r.json(); })
+      ]).then(function(results) {
+        var allCoupons = (results[0].coupons || []).filter(function(c) { return c.active; });
+        var applied = results[1].coupons || [];
+        var appliedIds = {};
+        applied.forEach(function(ac) { appliedIds[ac.code] = true; });
+
+        // Populate select — exclude already applied
+        var sel = document.getElementById('coupon-apply-select');
+        var opts = '<option value="">— Choose a coupon —</option>';
+        allCoupons.forEach(function(c) {
+          if (appliedIds[c.code]) return;
+          var label = c.code + ' — ';
+          if (c.discount_type === 'percent') label += c.discount_value + '% off';
+          else label += '$' + c.discount_value + ' off';
+          if (c.free_first_month) label += ' + free 1st month';
+          opts += '<option value="' + c.id + '" data-type="' + esc(c.discount_type) + '" data-value="' + c.discount_value + '" data-free="' + c.free_first_month + '">' + esc(label) + '</option>';
+        });
+        if (allCoupons.length === 0 || allCoupons.length === Object.keys(appliedIds).length) {
+          opts = '<option value="">No available coupons</option>';
+        }
+        sel.innerHTML = opts;
+
+        // Render applied list
+        renderAppliedCoupons(applied, userId);
+      });
+    };
+
+    document.getElementById('coupon-apply-select').addEventListener('change', function() {
+      var opt = this.options[this.selectedIndex];
+      var preview = document.getElementById('coupon-apply-preview');
+      var detail = document.getElementById('coupon-preview-detail');
+      if (!this.value) {
+        preview.style.display = 'none';
+        return;
+      }
+      preview.style.display = 'block';
+      var type = opt.getAttribute('data-type');
+      var val = opt.getAttribute('data-value');
+      var free = opt.getAttribute('data-free') === '1';
+      var html = '<strong>' + esc(opt.textContent.split(' — ')[0]) + '</strong><br>';
+      if (type === 'percent') html += '<span style="color:#28a745;font-weight:600;">' + val + '% discount</span>';
+      else html += '<span style="color:#28a745;font-weight:600;">$' + val + ' off</span>';
+      if (free) html += '<br><span style="color:#1e3c72;">+ Free first month of maintenance</span>';
+      detail.innerHTML = html;
+    });
+
+    window.applyCouponToUser = function() {
+      var sel = document.getElementById('coupon-apply-select');
+      var couponId = sel.value;
+      if (!couponId || !couponApplyUserId) return;
+      var btn = document.getElementById('coupon-apply-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Applying...';
+
+      fetch(API + '/admin/users/' + couponApplyUserId + '/apply-coupon', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ coupon_id: parseInt(couponId) })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) { showCouponAlert(res.data.error || 'Failed', true); return; }
+        showCouponAlert(res.data.message, false);
+        // Refresh the dropdown
+        openCouponDropdown(couponApplyUserId, document.getElementById('coupon-apply-username').textContent);
+      })
+      .catch(function() { showCouponAlert('Network error', true); })
+      .finally(function() { btn.disabled = false; btn.innerHTML = '<i class="fa fa-check" style="margin-right:6px;"></i>Apply Coupon'; });
+    };
+
+    function renderAppliedCoupons(coupons, userId) {
+      var container = document.getElementById('coupon-applied-list');
+      if (!coupons.length) {
+        container.innerHTML = '<span style="color:#aaa;">No coupons applied yet.</span>';
+        return;
+      }
+      var html = '';
+      coupons.forEach(function(c) {
+        var desc = c.discount_type === 'percent' ? c.discount_value + '% off' : '$' + c.discount_value + ' off';
+        if (c.free_first_month) desc += ' + free 1st mo';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;background:#f0f4f8;border-radius:8px;padding:8px 12px;margin-bottom:6px;">'
+          + '<div><strong style="color:#1e3c72;">' + esc(c.code) + '</strong> <span style="color:#666;">— ' + desc + '</span>'
+          + (c.seen ? ' <span style="color:#28a745;font-size:11px;">✓ seen</span>' : ' <span style="color:#ff5959;font-size:11px;">● unseen</span>')
+          + '</div>'
+          + '<button class="btn btn-sm btn-outline-danger" onclick="removeUserCoupon(' + userId + ',' + c.id + ')" title="Remove"><i class="fa fa-times"></i></button>'
+          + '</div>';
+      });
+      container.innerHTML = html;
+    }
+
+    window.removeUserCoupon = function(userId, ucId) {
+      if (!confirm('Remove this coupon from the user?')) return;
+      fetch(API + '/admin/users/' + userId + '/coupons/' + ucId, {
+        method: 'DELETE', headers: authHeaders()
+      }).then(function() {
+        openCouponDropdown(userId, document.getElementById('coupon-apply-username').textContent);
+      });
     };
 
   })();

@@ -96,6 +96,17 @@
       letter-spacing: 0.5px; text-align: center; opacity: 0;
       animation: giftTextIn 0.8s ease 0.6s forwards;
     }
+    #gift-overlay .gift-coupon-detail {
+      color: #fff; text-align: center; margin-top: 18px; opacity: 0;
+      animation: giftTextIn 0.8s ease 1s forwards;
+    }
+    #gift-overlay .gift-coupon-detail .coupon-code {
+      display: inline-block; background: rgba(255,255,255,0.15); border: 1px dashed rgba(255,255,255,0.5);
+      padding: 8px 22px; border-radius: 10px; font-size: 20px; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px;
+    }
+    #gift-overlay .gift-coupon-detail .coupon-desc {
+      font-size: 15px; opacity: 0.9;
+    }
     @keyframes giftTextIn { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(12px); } }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
@@ -106,6 +117,7 @@
   <div id="gift-overlay" style="display:none;">
     <div id="gift-lottie"></div>
     <div class="gift-text">A gift, from us to you</div>
+    <div class="gift-coupon-detail" id="gift-coupon-detail" style="display:none;"></div>
   </div>
 
   <!-- ═══ No-Auth Redirect ═══ -->
@@ -529,13 +541,46 @@
     document.getElementById('no-auth-screen').style.display = 'none';
     document.getElementById('dashboard-app').style.display = 'block';
 
-    // ── Gift animation on first visit ──
+    function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
+
+    // ── Gift animation for new coupons ──
     (function() {
-      var giftKey = 'es_gift_shown_' + (user.id || user.email);
-      if (!sessionStorage.getItem(giftKey)) {
-        sessionStorage.setItem(giftKey, '1');
+      fetch(API + '/me/coupons', { headers: authHeaders() })
+      .then(function(r) { return r.ok ? r.json() : { coupons: [] }; })
+      .then(function(data) {
+        var unseen = (data.coupons || []).filter(function(c) { return !c.seen; });
+        if (unseen.length === 0) {
+          // First visit welcome animation (no coupon)
+          var welcomeKey = 'es_gift_shown_' + (user.id || user.email);
+          if (!sessionStorage.getItem(welcomeKey)) {
+            sessionStorage.setItem(welcomeKey, '1');
+            playGiftAnimation(null);
+          }
+          return;
+        }
+        // Show animation for the first unseen coupon
+        var coupon = unseen[0];
+        playGiftAnimation(coupon);
+        // Mark all unseen as seen
+        unseen.forEach(function(c) {
+          fetch(API + '/me/coupons/' + c.id + '/seen', { method: 'POST', headers: authHeaders() });
+        });
+      })
+      .catch(function() {});
+
+      function playGiftAnimation(coupon) {
         var overlay = document.getElementById('gift-overlay');
         overlay.style.display = 'flex';
+
+        if (coupon) {
+          var detail = document.getElementById('gift-coupon-detail');
+          var desc = coupon.discount_type === 'percent'
+            ? coupon.discount_value + '% off' : '$' + coupon.discount_value + ' off';
+          if (coupon.free_first_month) desc += ' + free first month';
+          detail.innerHTML = '<div class="coupon-code">' + coupon.code + '</div><div class="coupon-desc">' + desc + '</div>';
+          detail.style.display = 'block';
+        }
+
         var anim = lottie.loadAnimation({
           container: document.getElementById('gift-lottie'),
           renderer: 'svg',
@@ -547,19 +592,16 @@
           setTimeout(function() {
             overlay.classList.add('fade-out');
             setTimeout(function() { overlay.remove(); }, 700);
-          }, 1200);
+          }, coupon ? 2500 : 1200);
         });
-        // Fallback if animation is very long
         setTimeout(function() {
           if (overlay.parentNode) {
             overlay.classList.add('fade-out');
             setTimeout(function() { overlay.remove(); }, 700);
           }
-        }, 8000);
+        }, 10000);
       }
     })();
-
-    function authHeaders() { return { 'Authorization': 'Bearer ' + token }; }
 
     function esc(s) {
       var d = document.createElement('div');

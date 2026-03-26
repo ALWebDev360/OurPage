@@ -455,6 +455,15 @@ def init_db():
             expires_at TEXT,
             created_at TEXT DEFAULT (datetime('now'))
         );
+        CREATE TABLE IF NOT EXISTS user_coupons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            coupon_id INTEGER NOT NULL,
+            seen INTEGER DEFAULT 0,
+            applied_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (coupon_id) REFERENCES coupons(id)
+        );
     """)
     # Add free_first_month to coupons if upgrading
     try:
@@ -2464,6 +2473,73 @@ def validate_coupon():
         except ValueError:
             pass
     return jsonify({"ok": True, "code": c["code"], "discount_type": c["discount_type"], "discount_value": c["discount_value"], "free_first_month": bool(c["free_first_month"])})
+
+
+# ── Apply coupon to user (admin) ────────────────────────────────
+@app.route("/api/admin/users/<int:user_id>/apply-coupon", methods=["POST"])
+@require_admin
+def admin_apply_coupon(user_id):
+    data = request.get_json() or {}
+    coupon_id = data.get("coupon_id")
+    if not coupon_id:
+        return jsonify({"error": "coupon_id required"}), 400
+    db = get_db()
+    user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    coupon = db.execute("SELECT id, code FROM coupons WHERE id = ? AND active = 1", (coupon_id,)).fetchone()
+    if not coupon:
+        return jsonify({"error": "Coupon not found or inactive"}), 404
+    existing = db.execute("SELECT id FROM user_coupons WHERE user_id = ? AND coupon_id = ?", (user_id, coupon_id)).fetchone()
+    if existing:
+        return jsonify({"error": "Coupon already applied to this user"}), 409
+    db.execute("INSERT INTO user_coupons (user_id, coupon_id) VALUES (?, ?)", (user_id, coupon_id))
+    db.commit()
+    return jsonify({"ok": True, "message": "Coupon " + coupon["code"] + " applied"})
+
+
+@app.route("/api/admin/users/<int:user_id>/coupons", methods=["GET"])
+@require_admin
+def admin_get_user_coupons(user_id):
+    db = get_db()
+    rows = db.execute(
+        "SELECT uc.id, uc.applied_at, uc.seen, c.code, c.discount_type, c.discount_value, c.free_first_month "
+        "FROM user_coupons uc JOIN coupons c ON uc.coupon_id = c.id WHERE uc.user_id = ? ORDER BY uc.applied_at DESC",
+        (user_id,)
+    ).fetchall()
+    return jsonify({"coupons": [dict(r) for r in rows]})
+
+
+@app.route("/api/admin/users/<int:user_id>/coupons/<int:uc_id>", methods=["DELETE"])
+@require_admin
+def admin_remove_user_coupon(user_id, uc_id):
+    db = get_db()
+    db.execute("DELETE FROM user_coupons WHERE id = ? AND user_id = ?", (uc_id, user_id))
+    db.commit()
+    return jsonify({"ok": True})
+
+
+# ── Client: get my coupons ──────────────────────────────────────
+@app.route("/api/me/coupons", methods=["GET"])
+@require_auth
+def get_my_coupons():
+    db = get_db()
+    uid = g.current_user["id"]
+    rows = db.execute(
+        "SELECT uc.id, uc.seen, uc.applied_at, c.code, c.discount_type, c.discount_value, c.free_first_month "
+        "FROM user_coupons uc JOIN coupons c ON uc.coupon_id = c.id WHERE uc.user_id = ? ORDER BY uc.applied_at DESC",
+        (uid,)
+    ).fetchall()
+    return jsonify({"coupons": [dict(r) for r in rows]})
+
+
+@app.route("/api/me/coupons/<int:uc_id>/seen", methods=["POST"])
+@require_auth
+def mark_coupon_seen(uc_id):
+    db = get_db()
+    db.execute("UPDATE user_coupons SET seen = 1 WHERE id = ? AND user_id = ?", (uc_id, g.current_user["id"]))
+    db.commit()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/admin/site-config/porkbun", methods=["GET"])
