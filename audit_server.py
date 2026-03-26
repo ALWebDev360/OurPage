@@ -1791,7 +1791,9 @@ def admin_toggle_demo_preview(user_id):
             if u:
                 u_email = u["email"]
                 u_name = u.get("name") or u.get("first_name") or u_email.split("@")[0]
-                preview_url = get_frontend_url() + "/preview-viewer.html"
+                subpath = site + '/dist/index.html' if has_dist else site + '/index.html'
+                from urllib.parse import quote
+                preview_url = get_frontend_url() + '/preview-viewer.html?url=' + quote(get_frontend_url() + '/preview/' + subpath, safe='')
                 send_email_async(
                     u_email,
                     "Your Website Preview is Ready!",
@@ -3483,10 +3485,27 @@ def admin_get_deploy_requests():
 
 
 @app.route("/preview/<path:filepath>")
-@require_auth
 def serve_preview(filepath):
-    """Serve files from websitepreviews/ for authenticated users with demo access."""
-    user = g.current_user
+    """Serve files from websitepreviews/ for authenticated users with demo access.
+    Supports Bearer header OR ?token= query param (needed for iframe loading)."""
+    # Try Authorization header first, then query-param token for iframe support
+    auth_header = request.headers.get("Authorization", "")
+    token_val = None
+    if auth_header.startswith("Bearer "):
+        token_val = auth_header[7:]
+    else:
+        token_val = request.args.get("token")
+    if not token_val:
+        return jsonify({"error": "Authentication required"}), 401
+    db = get_db()
+    row = db.execute(
+        "SELECT u.id, u.name, u.email, u.company, u.role, u.payment_portal, u.demo_preview, u.demo_preview_site FROM users u "
+        "JOIN auth_tokens t ON t.user_id = u.id WHERE t.token = ?",
+        (token_val,)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "Invalid or expired token"}), 401
+    user = dict(row)
     if not user.get("demo_preview") or not user.get("demo_preview_site"):
         return jsonify({"error": "Preview not enabled"}), 403
     site = user["demo_preview_site"]

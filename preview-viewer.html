@@ -403,9 +403,10 @@
   // If no token, redirect to dashboard login
   if (!token) { window.location.href = 'dashboard.html'; return; }
 
-  // Load preview in iframe
+  // Load preview in iframe — append auth token for server-side preview routes
   if (previewUrl) {
-    document.getElementById('preview-frame').src = previewUrl;
+    var sep = previewUrl.indexOf('?') === -1 ? '?' : '&';
+    document.getElementById('preview-frame').src = previewUrl + sep + 'token=' + encodeURIComponent(token);
   }
 
   function authHeaders() {

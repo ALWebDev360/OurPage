@@ -695,7 +695,8 @@
           path: 'Red%20Circle.json'
         });
         var subpath = data.user.demo_has_dist ? data.user.demo_preview_site + '/dist/index.html' : data.user.demo_preview_site + '/index.html';
-        var rawUrl = 'http://127.0.0.1:8080/websitepreviews/' + subpath;
+        var previewOrigin = (location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? 'http://127.0.0.1:5000' : location.origin;
+        var rawUrl = previewOrigin + '/preview/' + subpath;
         document.getElementById('demo-preview-link').href = 'preview-viewer.html?url=' + encodeURIComponent(rawUrl);
       }
     });
