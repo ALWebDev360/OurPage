@@ -4,12 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Dashboard — Elevated Solutions</title>
-  <script>
-    (function(w,d,s,r,n){w.TrustpilotObject=n;w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)};
-        a=d.createElement(s);a.async=1;a.src=r;a.type='text/java'+s;f=d.getElementsByTagName(s)[0];
-        f.parentNode.insertBefore(a,f)})(window,document,'script', 'https://invitejs.trustpilot.com/tp.min.js', 'tp');
-        tp('register', 'J5wdTf6PxSsgvuE4');
-  </script>
   <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/fontawesome.css">
   <style>
@@ -1205,17 +1199,6 @@
             var payType = urlParams.get('type');
             var msg = payType === 'monthly' ? 'Monthly payments activated!' : 'Payment successful!';
             alert(msg + ' Your payment has been processed via Stripe.');
-            // Send Trustpilot review invitation
-            if (typeof tp === 'function' && user && user.email) {
-              var trustpilot_invitation = {
-                recipientEmail: user.email,
-                recipientName: user.name || '',
-                referenceId: 'order_' + Date.now(),
-                source: 'InvitationScript',
-                tags: [payType || 'payment'],
-              };
-              tp('createInvitation', trustpilot_invitation);
-            }
           } else if (paymentResult === 'cancel') {
             alert('Payment was cancelled. You can try again anytime.');
           }
