@@ -1186,8 +1186,15 @@
     // ── Init ──
     loadDashboard();
 
-    // ── Handle Stripe return ──
+    // ── Auto-navigate to a view if ?view= is set (e.g. from email links) ──
     var urlParams = new URLSearchParams(window.location.search);
+    var autoView = urlParams.get('view');
+    if (autoView && document.getElementById('view-' + autoView)) {
+      switchView(autoView);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    // ── Handle Stripe return ──
     var paymentResult = urlParams.get('payment');
     var deployPayment = urlParams.get('deploy_payment');
     var deploySessionId = urlParams.get('session_id');

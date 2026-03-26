@@ -1791,10 +1791,7 @@ def admin_toggle_demo_preview(user_id):
             if u:
                 u_email = u["email"]
                 u_name = u["name"] or u_email.split("@")[0]
-                subpath = site + '/dist/index.html' if has_dist else site + '/index.html'
-                from urllib.parse import quote
-                preview_url = get_frontend_url() + '/preview-viewer.html?url=' + quote(get_frontend_url() + '/preview/' + subpath, safe='')
-                dashboard_url = get_frontend_url() + '/dashboard.html'
+                dashboard_url = get_frontend_url() + '/dashboard.html?view=demo'
                 preview_html = f"""
                 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:30px 20px;">
                     <div style="text-align:center;margin-bottom:30px;">
@@ -1804,7 +1801,7 @@ def admin_toggle_demo_preview(user_id):
                     <p style="font-size:16px;color:#333;">Hi <strong>{u_name}</strong>,</p>
                     <p style="font-size:15px;color:#555;line-height:1.7;">Great news — your website preview is now live and ready for you to review!</p>
                     <div style="text-align:center;margin:30px 0;">
-                        <a href="{preview_url}" style="background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">View Your Preview</a>
+                        <a href="{dashboard_url}" style="background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">View Your Preview</a>
                     </div>
                     <p style="font-size:14px;color:#555;line-height:1.7;">Take your time exploring the design. You can request revisions or approve it directly from your <a href="{dashboard_url}" style="color:#1e3c72;font-weight:600;">dashboard</a>.</p>
                     <div style="background:#f0f7ff;border-radius:10px;padding:16px;margin:20px 0;">
@@ -1821,7 +1818,7 @@ def admin_toggle_demo_preview(user_id):
                 """
                 send_email_async(u_email, "Your Website Preview is Ready!",
                                  preview_html,
-                                 f"Hi {u_name},\n\nYour website preview is ready! View it here: {preview_url}\n\nYou can also request revisions or approve from your dashboard: {dashboard_url}\n\n— Elevated Solutions")
+                                 f"Hi {u_name},\n\nYour website preview is ready! Log in to your dashboard to view it: {dashboard_url}\n\n— Elevated Solutions")
                 print(f"[preview-email] Preview ready email queued for {u_email}")
         except Exception as e:
             print(f"[preview-email] Error: {e}")
