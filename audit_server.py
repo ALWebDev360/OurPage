@@ -2484,10 +2484,10 @@ def admin_apply_coupon(user_id):
     if not coupon_id:
         return jsonify({"error": "coupon_id required"}), 400
     db = get_db()
-    user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+    user = db.execute("SELECT id, name, email FROM users WHERE id = ?", (user_id,)).fetchone()
     if not user:
         return jsonify({"error": "User not found"}), 404
-    coupon = db.execute("SELECT id, code FROM coupons WHERE id = ? AND active = 1", (coupon_id,)).fetchone()
+    coupon = db.execute("SELECT id, code, discount_type, discount_value, free_first_month FROM coupons WHERE id = ? AND active = 1", (coupon_id,)).fetchone()
     if not coupon:
         return jsonify({"error": "Coupon not found or inactive"}), 404
     existing = db.execute("SELECT id FROM user_coupons WHERE user_id = ? AND coupon_id = ?", (user_id, coupon_id)).fetchone()
@@ -2495,6 +2495,35 @@ def admin_apply_coupon(user_id):
         return jsonify({"error": "Coupon already applied to this user"}), 409
     db.execute("INSERT INTO user_coupons (user_id, coupon_id) VALUES (?, ?)", (user_id, coupon_id))
     db.commit()
+
+    # Send email notification
+    discount_desc = f"{coupon['discount_value']}% off" if coupon["discount_type"] == "percent" else f"${coupon['discount_value']} off"
+    if coupon["free_first_month"]:
+        discount_desc += " + free first month of maintenance"
+    frontend = get_frontend_url()
+    html_body = f"""
+    <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:0 auto;padding:30px 20px;">
+      <div style="text-align:center;margin-bottom:30px;">
+        <h2 style="color:#1e3c72;margin:0;">Elevated<span style="color:#ff5959;">Solutions</span></h2>
+      </div>
+      <div style="background:linear-gradient(135deg,#1e3c72,#2a5298);border-radius:16px;padding:35px 30px;text-align:center;color:#fff;">
+        <p style="font-size:18px;margin:0 0 8px;opacity:0.9;">A gift, from us to you</p>
+        <h1 style="margin:0 0 20px;font-size:28px;">🎁 You've received a discount!</h1>
+        <div style="background:rgba(255,255,255,0.15);border:2px dashed rgba(255,255,255,0.5);border-radius:12px;padding:16px 28px;display:inline-block;margin-bottom:18px;">
+          <span style="font-size:26px;font-weight:700;letter-spacing:3px;">{coupon['code']}</span>
+        </div>
+        <p style="font-size:17px;margin:0;font-weight:600;">{discount_desc}</p>
+      </div>
+      <div style="text-align:center;margin-top:30px;">
+        <p style="color:#555;font-size:15px;">Hi {user['name'].split(' ')[0]}, we've added a special discount to your account. Log in to your dashboard to see it applied at checkout.</p>
+        <a href="{frontend}/dashboard.html" style="display:inline-block;background:#ff5959;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:600;font-size:15px;margin-top:10px;">View My Dashboard</a>
+      </div>
+      <p style="text-align:center;color:#aaa;font-size:12px;margin-top:30px;">© 2026 Elevated Solutions. All rights reserved.</p>
+    </div>
+    """
+    text_body = f"Hi {user['name'].split(' ')[0]}, you've received a discount code: {coupon['code']} ({discount_desc}). Log in to your dashboard at {frontend}/dashboard.html to see it applied."
+    send_email_async(user["email"], "🎁 You've received a discount from Elevated Solutions!", html_body, text_body)
+
     return jsonify({"ok": True, "message": "Coupon " + coupon["code"] + " applied"})
 
 
