@@ -3487,31 +3487,41 @@ def admin_get_deploy_requests():
 @app.route("/preview/<path:filepath>")
 def serve_preview(filepath):
     """Serve files from websitepreviews/ for authenticated users with demo access.
-    Supports Bearer header OR ?token= query param (needed for iframe loading)."""
-    # Try Authorization header first, then query-param token for iframe support
-    auth_header = request.headers.get("Authorization", "")
-    token_val = None
-    if auth_header.startswith("Bearer "):
-        token_val = auth_header[7:]
-    else:
-        token_val = request.args.get("token")
-    if not token_val:
-        return jsonify({"error": "Authentication required"}), 401
-    db = get_db()
-    row = db.execute(
-        "SELECT u.id, u.name, u.email, u.company, u.role, u.payment_portal, u.demo_preview, u.demo_preview_site FROM users u "
-        "JOIN auth_tokens t ON t.user_id = u.id WHERE t.token = ?",
-        (token_val,)
-    ).fetchone()
-    if not row:
-        return jsonify({"error": "Invalid or expired token"}), 401
-    user = dict(row)
-    if not user.get("demo_preview") or not user.get("demo_preview_site"):
-        return jsonify({"error": "Preview not enabled"}), 403
-    site = user["demo_preview_site"]
-    # Security: ensure requested path starts with user's assigned site
-    if not filepath.startswith(site + "/") and filepath != site:
-        return jsonify({"error": "Access denied"}), 403
+    Supports Bearer header OR ?token= query param (needed for iframe loading).
+    Static assets (CSS, JS, images, fonts) are served without auth so the browser
+    can load them as sub-resources of the authenticated HTML page."""
+    # Determine if this is a static asset (sub-resource loaded by the browser)
+    ASSET_EXTS = {'.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg',
+                  '.ico', '.woff', '.woff2', '.ttf', '.eot', '.otf', '.map', '.json'}
+    _, ext = os.path.splitext(filepath)
+    is_asset = ext.lower() in ASSET_EXTS
+
+    if not is_asset:
+        # HTML / entry-point requests require authentication
+        auth_header = request.headers.get("Authorization", "")
+        token_val = None
+        if auth_header.startswith("Bearer "):
+            token_val = auth_header[7:]
+        else:
+            token_val = request.args.get("token")
+        if not token_val:
+            return jsonify({"error": "Authentication required"}), 401
+        db = get_db()
+        row = db.execute(
+            "SELECT u.id, u.name, u.email, u.company, u.role, u.payment_portal, u.demo_preview, u.demo_preview_site FROM users u "
+            "JOIN auth_tokens t ON t.user_id = u.id WHERE t.token = ?",
+            (token_val,)
+        ).fetchone()
+        if not row:
+            return jsonify({"error": "Invalid or expired token"}), 401
+        user = dict(row)
+        if not user.get("demo_preview") or not user.get("demo_preview_site"):
+            return jsonify({"error": "Preview not enabled"}), 403
+        site = user["demo_preview_site"]
+        if not filepath.startswith(site + "/") and filepath != site:
+            return jsonify({"error": "Access denied"}), 403
+
+    # Path-traversal protection (applies to both assets and HTML)
     safe_path = os.path.normpath(os.path.join(PREVIEWS_DIR, filepath))
     if not safe_path.startswith(os.path.normpath(PREVIEWS_DIR)):
         return jsonify({"error": "Invalid path"}), 400
