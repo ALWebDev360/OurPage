@@ -626,13 +626,6 @@
       return d.innerHTML;
     }
 
-    function handleAuthError() {
-      localStorage.removeItem('es_token');
-      localStorage.removeItem('es_user');
-      document.getElementById('dashboard-app').style.display = 'none';
-      document.getElementById('no-auth-screen').style.display = 'flex';
-    }
-
     var typeLabels = {
       general: 'General Inquiry', website: 'Website Design',
       seo: 'SEO & Marketing', automation: 'Automation', strategy: 'Digital Strategy'
@@ -710,7 +703,7 @@
     function loadDashboard() {
       fetch(API + '/me/dashboard', { headers: authHeaders() })
       .then(function(r) {
-        if (r.status === 401) { handleAuthError(); return null; }
+        if (!r.ok) return null;
         return r.json();
       })
       .then(function(data) {
@@ -752,7 +745,7 @@
     function loadAllConsultations() {
       fetch(API + '/consultations', { headers: authHeaders() })
       .then(function(r) {
-        if (r.status === 401) { handleAuthError(); return null; }
+        if (!r.ok) return null;
         return r.json();
       })
       .then(function(data) {
@@ -834,7 +827,7 @@
         })
       })
       .then(function(r) {
-        if (r.status === 401) { handleAuthError(); return null; }
+        if (!r.ok) return null;
         return r.json().then(function(d) { return { ok: r.ok, data: d }; });
       })
       .then(function(res) {
@@ -881,7 +874,7 @@
         })
       })
       .then(function(r) {
-        if (r.status === 401) { handleAuthError(); return null; }
+        if (!r.ok && r.status !== 400 && r.status !== 403) return null;
         return r.json().then(function(d) { return { ok: r.ok, data: d }; });
       })
       .then(function(res) {
@@ -900,7 +893,7 @@
     function loadPayments() {
       fetch(API + '/me/payments', { headers: authHeaders() })
       .then(function(r) {
-        if (r.status === 401) { handleAuthError(); return null; }
+        if (!r.ok) return null;
         if (r.status === 403) return null;
         return r.json();
       })
@@ -1025,7 +1018,7 @@
 
     function bkLoadDates(cb) {
       fetch(API + '/scheduler/available-dates', { headers: authHeaders() })
-      .then(function(r) { if (r.status === 401) { handleAuthError(); return null; } return r.json(); })
+      .then(function(r) { if (!r.ok) return null; return r.json(); })
       .then(function(data) {
         if (!data) return;
         bkAvailDates = {};
@@ -1125,7 +1118,7 @@
         })
       })
       .then(function(r) {
-        if (r.status === 401) { handleAuthError(); return null; }
+        if (!r.ok) return null;
         return r.json().then(function(d) { return { ok: r.ok, data: d }; });
       })
       .then(function(res) {
