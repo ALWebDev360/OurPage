@@ -142,6 +142,7 @@
         <li id="nav-payments" style="display:none;"><a href="#" data-view="payments"><i class="fa fa-credit-card"></i> <span>Payments</span></a></li>
         <li id="nav-demo" style="display:none;"><a href="#" data-view="demo"><i class="fa fa-eye"></i> <span>Service Preview</span></a></li>
         <li><a href="#" data-view="profile"><i class="fa fa-user"></i> <span>My Profile</span></a></li>
+        <li id="nav-admin" style="display:none;"><a href="panel-108712b8563d42fc.html" style="background:rgba(255,89,89,0.15);"><i class="fa fa-lock"></i> <span>Admin Panel</span></a></li>
       </ul>
       <div class="sidebar-bottom">
         <a href="index.html"><i class="fa fa-arrow-left"></i> <span>Back to Site</span></a>
@@ -644,6 +645,9 @@
     fetch(API + '/me', { headers: authHeaders() })
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(data) {
+      if (data && data.user && data.user.role === 'admin') {
+        document.getElementById('nav-admin').style.display = '';
+      }
       if (data && data.user && data.user.payment_portal) {
         document.getElementById('nav-payments').style.display = '';
       }
