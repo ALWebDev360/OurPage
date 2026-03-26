@@ -260,6 +260,24 @@ def send_email_async(to_email, subject, html_body, text_body=None):
     t.start()
 
 
+def get_admin_notify_email():
+    """Return the email address for admin notifications.
+    Checks site_config 'admin_notify_email' first, then falls back to admin user's email."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT value FROM site_config WHERE key = 'admin_notify_email'").fetchone()
+        if row and row["value"] and row["value"].strip():
+            email = row["value"].strip()
+            conn.close()
+            return email
+        row = conn.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+        conn.close()
+        return row["email"] if row else None
+    except Exception:
+        return None
+
+
 def get_frontend_url():
     """Return ngrok URL if configured, otherwise FRONTEND_URL."""
     ngrok = get_ngrok_url()
@@ -1546,10 +1564,10 @@ def create_consultation():
 
     # Notify admin about new consultation
     try:
-        admin_row = db.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-        if admin_row:
+        admin_email = get_admin_notify_email()
+        if admin_email:
             send_email_async(
-                admin_row["email"],
+                admin_email,
                 "New Consultation Booked — " + user_name,
                 '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
                 '<div style="background:linear-gradient(135deg,#e67e22,#d35400);padding:30px;text-align:center;">'
@@ -2105,11 +2123,11 @@ def stripe_webhook():
 
                     # Notify admin about new purchase
                     try:
-                        admin_row = db.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-                        if admin_row and u:
+                        admin_email = get_admin_notify_email()
+                        if admin_email and u:
                             u_name_admin = u.get("name") or u.get("first_name") or u["email"].split("@")[0]
                             send_email_async(
-                                admin_row["email"],
+                                admin_email,
                                 "New Purchase — " + dr["domain"] + " ($" + f"{amount:.2f}" + ")",
                                 '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
                                 '<div style="background:linear-gradient(135deg,#28a745,#218838);padding:30px;text-align:center;">'
@@ -2857,7 +2875,7 @@ def admin_set_ngrok_config():
 def admin_get_email_config():
     """Get SMTP email configuration."""
     db = get_db()
-    keys = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_name', 'smtp_from_email']
+    keys = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_name', 'smtp_from_email', 'admin_notify_email']
     cfg = {}
     for k in keys:
         row = db.execute("SELECT value FROM site_config WHERE key = ?", (k,)).fetchone()
@@ -2884,6 +2902,7 @@ def admin_set_email_config():
         'smtp_user': (data.get('smtp_user') or '').strip(),
         'smtp_from_name': (data.get('smtp_from_name') or '').strip(),
         'smtp_from_email': (data.get('smtp_from_email') or '').strip(),
+        'admin_notify_email': (data.get('admin_notify_email') or '').strip(),
     }
     # Only update password if provided (not masked)
     smtp_pass = str(data.get('smtp_pass') or '').strip()
@@ -3003,10 +3022,10 @@ def deploy_payment_status():
 
                 # Notify admin about new purchase (fallback path)
                 try:
-                    admin_row = db.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-                    if admin_row:
+                    admin_email = get_admin_notify_email()
+                    if admin_email:
                         send_email_async(
-                            admin_row["email"],
+                            admin_email,
                             "New Purchase — " + row["domain"] + " ($" + f"{amount:.2f}" + ")",
                             '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
                             '<div style="background:linear-gradient(135deg,#28a745,#218838);padding:30px;text-align:center;">'
