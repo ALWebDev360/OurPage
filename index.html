@@ -1342,9 +1342,7 @@ https://templatemo.com/tm-562-space-dynamic
         setTimeout(function() {
           authModal.hide();
           signupForm.reset();
-          openScheduleModal();
-          var skipEl = document.getElementById('skip-schedule');
-          if (skipEl) skipEl.style.display = 'block';
+          window.location.href = 'dashboard.html';
         }, 1200);
       })
       .catch(function() { showAuthAlert('Could not connect to server', true); })
@@ -1375,6 +1373,7 @@ https://templatemo.com/tm-562-space-dynamic
         setTimeout(function() {
           authModal.hide();
           loginForm.reset();
+          window.location.href = 'dashboard.html';
         }, 1000);
       })
       .catch(function() { showAuthAlert('Could not connect to server', true); })
