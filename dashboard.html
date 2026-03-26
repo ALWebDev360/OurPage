@@ -539,6 +539,30 @@
       document.getElementById('no-auth-screen').style.display = 'flex';
       return;
     }
+
+    // Validate token with server before showing dashboard
+    fetch(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function(r) {
+      if (r.status === 401) {
+        localStorage.removeItem('es_token');
+        localStorage.removeItem('es_user');
+        document.getElementById('no-auth-screen').style.display = 'flex';
+        return;
+      }
+      return r.json().then(function(data) {
+        if (data && data.user) {
+          user = data.user;
+          localStorage.setItem('es_user', JSON.stringify(user));
+        }
+        initDashboard();
+      });
+    })
+    .catch(function() {
+      // Network error — trust local token and proceed
+      initDashboard();
+    });
+
+    function initDashboard() {
     document.getElementById('no-auth-screen').style.display = 'none';
     document.getElementById('dashboard-app').style.display = 'block';
 
@@ -1188,6 +1212,7 @@
         }, 800);
       }
     }
+    } // end initDashboard
   })();
   </script>
 </body>
