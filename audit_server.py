@@ -1416,7 +1416,7 @@ def create_consultation():
                 '<tr><td style="padding:8px 0;font-weight:600;">Type</td><td>' + type_label + '</td></tr>'
                 + ('<tr><td style="padding:8px 0;font-weight:600;">Notes</td><td>' + notes + '</td></tr>' if notes else '') +
                 '</table></div>'
-                '<p style="color:#555;font-size:14px;">View details in the <a href="' + get_frontend_url() + '/admin.html" style="color:#e67e22;font-weight:600;">admin panel</a>.</p>'
+                '<p style="color:#555;font-size:14px;">View details in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#e67e22;font-weight:600;">admin panel</a>.</p>'
                 '</div></div>',
                 'New consultation from ' + user_name + ' (' + user_email + ')\nDate: ' + nice_date + '\nTime: ' + time_str + '\nType: ' + type_label
             )
@@ -1976,7 +1976,7 @@ def stripe_webhook():
                                 '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Total</td><td style="text-align:right;font-weight:700;color:#28a745;">$' + f"{amount:.2f}" + '</td></tr>'
                                 '<tr><td style="padding:10px 0;font-weight:600;">Monthly</td><td style="text-align:right;">' + monthly_str + '</td></tr>'
                                 '</table></div>'
-                                '<p style="color:#555;font-size:14px;">Manage in the <a href="' + get_frontend_url() + '/admin.html" style="color:#28a745;font-weight:600;">admin panel</a>.</p>'
+                                '<p style="color:#555;font-size:14px;">Manage in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#28a745;font-weight:600;">admin panel</a>.</p>'
                                 '</div></div>',
                                 'New purchase from ' + u_name_admin + '\nDomain: ' + dr["domain"] + '\nTotal: $' + f"{amount:.2f}"
                             )
@@ -2873,7 +2873,7 @@ def deploy_payment_status():
                             '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Total</td><td style="text-align:right;font-weight:700;color:#28a745;">$' + f"{amount:.2f}" + '</td></tr>'
                             '<tr><td style="padding:10px 0;font-weight:600;">Monthly</td><td style="text-align:right;">' + monthly_str + '</td></tr>'
                             '</table></div>'
-                            '<p style="color:#555;font-size:14px;">Manage in the <a href="' + get_frontend_url() + '/admin.html" style="color:#28a745;font-weight:600;">admin panel</a>.</p>'
+                            '<p style="color:#555;font-size:14px;">Manage in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#28a745;font-weight:600;">admin panel</a>.</p>'
                             '</div></div>',
                             'New purchase from ' + u_name + '\nDomain: ' + row["domain"] + '\nTotal: $' + f"{amount:.2f}"
                         )
