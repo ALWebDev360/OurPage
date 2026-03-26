@@ -347,7 +347,14 @@ def init_db():
             payment_portal INTEGER DEFAULT 0,
             demo_preview INTEGER DEFAULT 0,
             demo_preview_site TEXT DEFAULT '',
+            email_verified INTEGER DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS email_verification_tokens (
+            token TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id)
         );
         CREATE TABLE IF NOT EXISTS auth_tokens (
             token TEXT PRIMARY KEY,
@@ -465,6 +472,21 @@ def init_db():
             FOREIGN KEY (coupon_id) REFERENCES coupons(id)
         );
     """)
+    # Add email_verified column if upgrading
+    try:
+        db.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    # Create email_verification_tokens table if upgrading
+    db.execute("""CREATE TABLE IF NOT EXISTS email_verification_tokens (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )""")
+    # Mark existing users as verified (they signed up before verification was required)
+    db.execute("UPDATE users SET email_verified = 1 WHERE email_verified = 0 AND id IN (SELECT DISTINCT user_id FROM auth_tokens)")
+    db.commit()
     # Add free_first_month to coupons if upgrading
     try:
         db.execute("ALTER TABLE coupons ADD COLUMN free_first_month INTEGER DEFAULT 0")
@@ -526,10 +548,14 @@ def init_db():
     if not existing:
         from werkzeug.security import generate_password_hash
         db.execute(
-            "INSERT INTO users (name, email, company, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (name, email, company, password_hash, role, email_verified) VALUES (?, ?, ?, ?, ?, 1)",
             ("Admin", "admin@elevatedsolutions.com", "Elevated Solutions",
              generate_password_hash("Admin123!"), "admin")
         )
+        db.commit()
+    else:
+        # Ensure admin is always verified
+        db.execute("UPDATE users SET email_verified = 1 WHERE email = 'admin@elevatedsolutions.com'")
         db.commit()
     db.close()
 
@@ -1044,23 +1070,111 @@ def signup():
         return jsonify({"error": "Invalid email address"}), 400
 
     db = get_db()
-    existing = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+    existing = db.execute("SELECT id, email_verified FROM users WHERE email = ?", (email,)).fetchone()
     if existing:
+        if not existing["email_verified"]:
+            # Resend verification for unverified account
+            _send_verification_email(existing["id"], name or "there", email)
+            return jsonify({"error": "An account with this email already exists but is not verified. We've resent the verification email."}), 409
         return jsonify({"error": "An account with this email already exists"}), 409
 
     password_hash = generate_password_hash(password)
     cursor = db.execute(
-        "INSERT INTO users (name, email, company, password_hash) VALUES (?, ?, ?, ?)",
+        "INSERT INTO users (name, email, company, password_hash, email_verified) VALUES (?, ?, ?, ?, 0)",
         (name, email, company, password_hash)
     )
     db.commit()
     user_id = cursor.lastrowid
 
-    token = uuid.uuid4().hex
-    db.execute("INSERT INTO auth_tokens (token, user_id) VALUES (?, ?)", (token, user_id))
+    # Send verification email instead of auto-login
+    _send_verification_email(user_id, name, email)
+
+    return jsonify({
+        "message": "Account created! Please check your email to verify your address.",
+        "requires_verification": True
+    }), 201
+
+
+def _send_verification_email(user_id, name, email):
+    """Generate a verification token and send the verification email."""
+    db = get_db()
+    # Remove any old verification tokens for this user
+    db.execute("DELETE FROM email_verification_tokens WHERE user_id = ?", (user_id,))
+    verification_token = uuid.uuid4().hex
+    db.execute("INSERT INTO email_verification_tokens (token, user_id) VALUES (?, ?)", (verification_token, user_id))
     db.commit()
 
-    # Send welcome email (async-ish, don't block signup on email failure)
+    try:
+        site_url = get_frontend_url()
+        verify_url = f"{site_url}/verify-email.html?token={verification_token}"
+        verify_html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:30px 20px;">
+            <div style="text-align:center;margin-bottom:30px;">
+                <h1 style="color:#1e3c72;margin:0;">Verify Your Email</h1>
+                <div style="width:60px;height:3px;background:linear-gradient(90deg,#1e3c72,#ff5959);margin:12px auto;"></div>
+            </div>
+            <p style="font-size:16px;color:#333;">Hi <strong>{name}</strong>,</p>
+            <p style="font-size:15px;color:#555;line-height:1.7;">Thank you for creating an account with Elevated Solutions! Please verify your email address by clicking the button below:</p>
+            <div style="text-align:center;margin:30px 0;">
+                <a href="{verify_url}" style="background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Verify Email Address</a>
+            </div>
+            <p style="font-size:13px;color:#888;line-height:1.6;">Or copy and paste this link into your browser:</p>
+            <p style="font-size:13px;color:#1e3c72;word-break:break-all;">{verify_url}</p>
+            <p style="font-size:13px;color:#888;line-height:1.6;">This link will expire in 24 hours. If you didn't create this account, you can safely ignore this email.</p>
+            <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
+            <p style="font-size:12px;color:#aaa;text-align:center;">Elevated Solutions &mdash; Web Design & Development</p>
+        </div>
+        """
+        send_email_async(email, "Verify your email — Elevated Solutions", verify_html,
+                         f"Hi {name},\n\nPlease verify your email by visiting: {verify_url}\n\nThis link expires in 24 hours.")
+        print(f"[signup] Verification email queued for {email}")
+    except Exception as e:
+        print(f"[signup] Verification email error: {e}")
+
+
+@app.route("/api/verify-email", methods=["POST"])
+def verify_email():
+    data = request.get_json(silent=True)
+    token = (data.get("token") or "").strip() if data else ""
+    if not token:
+        return jsonify({"error": "Verification token is required"}), 400
+
+    db = get_db()
+    row = db.execute(
+        "SELECT v.user_id, v.created_at, u.name, u.email, u.company, u.email_verified "
+        "FROM email_verification_tokens v JOIN users u ON u.id = v.user_id WHERE v.token = ?",
+        (token,)
+    ).fetchone()
+
+    if not row:
+        return jsonify({"error": "Invalid or expired verification link"}), 400
+
+    # Check 24-hour expiry
+    from datetime import datetime, timedelta
+    created = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")
+    if datetime.utcnow() - created > timedelta(hours=24):
+        db.execute("DELETE FROM email_verification_tokens WHERE token = ?", (token,))
+        db.commit()
+        return jsonify({"error": "Verification link has expired. Please sign up again or request a new link."}), 400
+
+    if row["email_verified"]:
+        # Already verified — just clean up token and let them log in
+        db.execute("DELETE FROM email_verification_tokens WHERE token = ?", (token,))
+        db.commit()
+        return jsonify({"message": "Email already verified. You can log in.", "already_verified": True})
+
+    # Mark email as verified
+    db.execute("UPDATE users SET email_verified = 1 WHERE id = ?", (row["user_id"],))
+    # Clean up verification token
+    db.execute("DELETE FROM email_verification_tokens WHERE user_id = ?", (row["user_id"],))
+    db.commit()
+
+    # Create an auth token so the user is logged in immediately
+    auth_token = uuid.uuid4().hex
+    db.execute("INSERT INTO auth_tokens (token, user_id) VALUES (?, ?)", (auth_token, row["user_id"]))
+    db.commit()
+
+    # Send welcome email now that they're verified
     try:
         site_url = get_frontend_url()
         welcome_html = f"""
@@ -1069,9 +1183,8 @@ def signup():
                 <h1 style="color:#1e3c72;margin:0;">Welcome to Elevated Solutions</h1>
                 <div style="width:60px;height:3px;background:linear-gradient(90deg,#1e3c72,#ff5959);margin:12px auto;"></div>
             </div>
-            <p style="font-size:16px;color:#333;">Hi <strong>{name}</strong>,</p>
-            <p style="font-size:15px;color:#555;line-height:1.7;">Thank you for creating an account with Elevated Solutions! We're excited to have you on board.</p>
-            <p style="font-size:15px;color:#555;line-height:1.7;">From your dashboard you can:</p>
+            <p style="font-size:16px;color:#333;">Hi <strong>{row['name']}</strong>,</p>
+            <p style="font-size:15px;color:#555;line-height:1.7;">Your email has been verified! You now have full access to your dashboard.</p>
             <ul style="font-size:14px;color:#555;line-height:2;">
                 <li>Schedule a free consultation with our team</li>
                 <li>Preview your custom website demo</li>
@@ -1081,23 +1194,39 @@ def signup():
             <div style="text-align:center;margin:30px 0;">
                 <a href="{site_url}/dashboard.html" style="background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Go to Your Dashboard</a>
             </div>
-            <p style="font-size:14px;color:#888;line-height:1.6;">If you have any questions, feel free to reply to this email or reach out through your dashboard.</p>
             <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
             <p style="font-size:12px;color:#aaa;text-align:center;">Elevated Solutions &mdash; Web Design & Development</p>
         </div>
         """
-        result = send_email_async(email, "Welcome to Elevated Solutions!", welcome_html,
-                           f"Hi {name},\n\nWelcome to Elevated Solutions! Visit your dashboard at {site_url}/dashboard.html\n\nThank you for signing up!")
-        if result is not True:
-            print(f"[signup] Welcome email queued for {email}")
+        send_email_async(row["email"], "Welcome to Elevated Solutions!", welcome_html,
+                         f"Hi {row['name']},\n\nYour email is verified! Visit your dashboard at {site_url}/dashboard.html")
     except Exception as e:
-        print(f"[signup] Welcome email error: {e}")
+        print(f"[verify] Welcome email error: {e}")
 
     return jsonify({
-        "message": "Account created successfully",
-        "token": token,
-        "user": {"id": user_id, "name": name, "email": email, "company": company}
-    }), 201
+        "message": "Email verified successfully! Welcome aboard.",
+        "token": auth_token,
+        "user": {"id": row["user_id"], "name": row["name"], "email": row["email"], "company": row["company"]}
+    })
+
+
+@app.route("/api/resend-verification", methods=["POST"])
+def resend_verification():
+    data = request.get_json(silent=True)
+    email = (data.get("email") or "").strip().lower() if data else ""
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    db = get_db()
+    user = db.execute("SELECT id, name, email_verified FROM users WHERE email = ?", (email,)).fetchone()
+    if not user:
+        # Don't reveal whether email exists
+        return jsonify({"message": "If an account with that email exists, a verification link has been sent."})
+    if user["email_verified"]:
+        return jsonify({"message": "This email is already verified. You can log in.", "already_verified": True})
+
+    _send_verification_email(user["id"], user["name"], email)
+    return jsonify({"message": "If an account with that email exists, a verification link has been sent."})
 
 
 @app.route("/api/login", methods=["POST"])
@@ -1116,6 +1245,11 @@ def login():
     user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     if not user or not check_password_hash(user["password_hash"], password):
         return jsonify({"error": "Invalid email or password"}), 401
+
+    if not user["email_verified"]:
+        # Resend verification email
+        _send_verification_email(user["id"], user["name"], email)
+        return jsonify({"error": "Please verify your email before logging in. We've sent a new verification link.", "needs_verification": True}), 403
 
     token = uuid.uuid4().hex
     db.execute("INSERT INTO auth_tokens (token, user_id) VALUES (?, ?)", (token, user["id"]))

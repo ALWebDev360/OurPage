@@ -1288,29 +1288,67 @@ https://templatemo.com/tm-562-space-dynamic
       btn.textContent = 'Creating...';
       authAlert.style.display = 'none';
 
+      var signupEmail = document.getElementById('signup-email').value.trim();
+
       fetch(API + '/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: document.getElementById('signup-name').value.trim(),
-          email: document.getElementById('signup-email').value.trim(),
+          email: signupEmail,
           company: document.getElementById('signup-company').value.trim(),
           password: document.getElementById('signup-password').value
         })
       })
-      .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+      .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, status: res.status, data: d }; }); })
       .then(function(res) {
         if (!res.ok) { showAuthAlert(res.data.error || 'Signup failed', true); return; }
-        saveAuth(res.data.token, res.data.user);
-        showAuthAlert('Account created! Welcome, ' + escapeHtml(res.data.user.name) + '!', false);
-        setTimeout(function() {
-          authModal.hide();
-          signupForm.reset();
-          window.location.href = 'dashboard.html';
-        }, 1200);
+        // Show verification message instead of auto-login
+        signupForm.style.display = 'none';
+        loginForm.style.display = 'none';
+        document.getElementById('auth-toggle').parentElement.style.display = 'none';
+        authTitle.textContent = 'Check Your Email';
+        authAlert.style.display = 'block';
+        authAlert.style.background = '#d4edda';
+        authAlert.style.color = '#155724';
+        authAlert.innerHTML = '<div style="text-align:center;padding:10px 0;">' +
+          '<div style="font-size:36px;margin-bottom:10px;">&#9993;</div>' +
+          '<strong>Verification email sent!</strong><br><br>' +
+          'We\u2019ve sent a verification link to <strong>' + escapeHtml(signupEmail) + '</strong>.<br>' +
+          'Please check your inbox and click the link to activate your account.' +
+          '<br><br><span style="font-size:13px;color:#666;">Didn\u2019t receive it? Check your spam folder or ' +
+          '<a href="#" id="resend-verification" style="color:#1e3c72;font-weight:600;">resend the email</a>.</span>' +
+          '</div>';
+        // Attach resend handler
+        var resendLink = document.getElementById('resend-verification');
+        if (resendLink) {
+          resendLink.addEventListener('click', function(ev) {
+            ev.preventDefault();
+            resendLink.textContent = 'Sending...';
+            resendLink.style.pointerEvents = 'none';
+            fetch(API + '/resend-verification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: signupEmail })
+            })
+            .then(function() { resendLink.textContent = 'Sent! Check your inbox.'; })
+            .catch(function() { resendLink.textContent = 'Failed. Try again.'; resendLink.style.pointerEvents = 'auto'; });
+          });
+        }
       })
       .catch(function() { showAuthAlert('Could not connect to server', true); })
       .finally(function() { btn.disabled = false; btn.textContent = 'Create Account'; });
+    });
+
+    // Reset modal when closed
+    document.getElementById('authModal').addEventListener('hidden.bs.modal', function() {
+      signupForm.style.display = isLoginMode ? 'none' : 'block';
+      loginForm.style.display = isLoginMode ? 'block' : 'none';
+      document.getElementById('auth-toggle').parentElement.style.display = '';
+      authTitle.textContent = isLoginMode ? 'Log In to Your Account' : 'Create Your Account';
+      authAlert.style.display = 'none';
+      signupForm.reset();
+      loginForm.reset();
     });
 
     // Login
