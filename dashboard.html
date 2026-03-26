@@ -140,7 +140,7 @@
         <li><a href="#" data-view="overview" class="active"><i class="fa fa-home"></i> <span>Overview</span></a></li>
         <li><a href="#" data-view="consultations"><i class="fa fa-calendar"></i> <span>Consultations</span></a></li>
         <li id="nav-payments" style="display:none;"><a href="#" data-view="payments"><i class="fa fa-credit-card"></i> <span>Payments</span></a></li>
-        <li id="nav-demo"><a href="#" data-view="demo" style="opacity:0.55;"><i class="fa fa-eye"></i> <span>Service Preview</span></a></li>
+        <li id="nav-demo"><a href="#" data-view="demo" style="opacity:0.55;"><i class="fa fa-eye"></i> <span>Service Preview</span><span id="demo-attention-lottie" style="display:none;width:28px;height:28px;margin-left:auto;flex-shrink:0;"></span></a></li>
         <li><a href="#" data-view="profile"><i class="fa fa-user"></i> <span>My Profile</span></a></li>
         <li id="nav-admin" style="display:none;"><a href="panel-108712b8563d42fc.html" style="background:rgba(255,89,89,0.15);"><i class="fa fa-lock"></i> <span>Admin Panel</span></a></li>
       </ul>
@@ -684,6 +684,16 @@
         document.getElementById('nav-demo').querySelector('a').style.opacity = '';
         document.getElementById('demo-coming-soon').style.display = 'none';
         document.getElementById('demo-ready').style.display = '';
+        // Show Red Circle attention animation on the preview tab
+        var attentionEl = document.getElementById('demo-attention-lottie');
+        attentionEl.style.display = 'inline-block';
+        lottie.loadAnimation({
+          container: attentionEl,
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          path: 'Red%20Circle.json'
+        });
         var subpath = data.user.demo_has_dist ? data.user.demo_preview_site + '/dist/index.html' : data.user.demo_preview_site + '/index.html';
         var rawUrl = 'http://127.0.0.1:8080/websitepreviews/' + subpath;
         document.getElementById('demo-preview-link').href = 'preview-viewer.html?url=' + encodeURIComponent(rawUrl);
@@ -705,11 +715,16 @@
       if (active) active.classList.add('active');
       document.querySelectorAll('.view-section').forEach(function(s) { s.classList.remove('active'); });
       document.getElementById('view-' + view).classList.add('active');
-      var titles = { overview: 'Overview', consultations: 'My Consultations', profile: 'My Profile', payments: 'Payments' };
+      var titles = { overview: 'Overview', consultations: 'My Consultations', profile: 'My Profile', payments: 'Payments', demo: 'Service Preview' };
       document.getElementById('page-title').textContent = titles[view] || view;
       if (view === 'overview') loadDashboard();
       if (view === 'consultations') loadAllConsultations();
       if (view === 'payments') loadPayments();
+      // Hide the attention animation once the client clicks the preview tab
+      if (view === 'demo') {
+        var attentionEl = document.getElementById('demo-attention-lottie');
+        if (attentionEl) { attentionEl.style.display = 'none'; attentionEl.innerHTML = ''; }
+      }
     };
 
     // ── Overview / Dashboard ──
