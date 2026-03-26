@@ -549,15 +549,7 @@
       .then(function(r) { return r.ok ? r.json() : { coupons: [] }; })
       .then(function(data) {
         var unseen = (data.coupons || []).filter(function(c) { return !c.seen; });
-        if (unseen.length === 0) {
-          // First visit welcome animation (no coupon)
-          var welcomeKey = 'es_gift_shown_' + (user.id || user.email);
-          if (!sessionStorage.getItem(welcomeKey)) {
-            sessionStorage.setItem(welcomeKey, '1');
-            playGiftAnimation(null);
-          }
-          return;
-        }
+        if (unseen.length === 0) return;
         // Show animation for the first unseen coupon
         var coupon = unseen[0];
         playGiftAnimation(coupon);
