@@ -16,7 +16,6 @@
     min-height: 100%;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
-    padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
     overscroll-behavior-y: contain;
   }
 
@@ -539,67 +538,33 @@
   }
 
 
-  /* ── Bottom Sticky CTA — GoMobileUX Footer Nav Pattern ── */
+  /* ── Bottom Sticky CTA — Hidden on mobile ── */
   .mobile-sticky-cta {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 99 !important;
-    background: rgba(255, 255, 255, 0.97) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px !important;
-    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1) !important;
-    display: flex !important;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-
-  .mobile-sticky-cta a {
-    display: block !important;
-    width: 100% !important;
-    background: #fe3f40 !important;
-    color: #fff !important;
-    text-align: center !important;
-    padding: 16px 20px !important;
-    border-radius: 14px !important;
-    font-weight: 700 !important;
-    font-size: 15px !important;
-    letter-spacing: 0.5px !important;
-    text-transform: uppercase !important;
-    text-decoration: none !important;
-    box-shadow: 0 4px 12px rgba(254, 63, 64, 0.3) !important;
-    transition: transform 0.15s ease !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-
-  .mobile-sticky-cta a:active {
-    transform: scale(0.97) !important;
+    display: none !important;
   }
 
 
-  /* ── Modals — GoMobileUX Bottom Sheet Style ── */
+  /* ── Modals — Centered on Mobile ── */
   .modal .modal-dialog {
-    margin: 0 !important;
-    max-width: 100% !important;
-    min-height: auto !important;
+    margin: 12px !important;
+    max-width: calc(100% - 24px) !important;
     display: flex !important;
-    align-items: flex-end !important;
-    min-height: 100vh !important;
+    align-items: center !important;
+    min-height: calc(100vh - 24px) !important;
   }
 
   .modal .modal-content {
-    border-radius: 20px 20px 0 0 !important;
+    border-radius: 20px !important;
     border: none !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
-    max-height: 92vh !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2) !important;
+    max-height: 90vh !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: 8px !important;
   }
 
   .modal .modal-header {
-    padding: 24px 20px 16px 20px !important;
+    padding: 20px 20px 14px 20px !important;
     border-bottom: 1px solid #f0f0f0 !important;
     position: sticky !important;
     top: 0 !important;
@@ -608,16 +573,7 @@
   }
 
   .modal .modal-header::before {
-    content: '' !important;
-    display: block !important;
-    width: 36px !important;
-    height: 4px !important;
-    background: #ccc !important;
-    border-radius: 2px !important;
-    position: absolute !important;
-    top: 8px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
+    display: none !important;
   }
 
   .modal .modal-header .modal-title {
@@ -744,7 +700,7 @@
 
   /* ── Footer ── */
   footer {
-    padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: 20px !important;
   }
 
   footer p {

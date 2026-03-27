@@ -140,8 +140,8 @@
       .empty-state { padding: 30px 16px; }
       .empty-state i { font-size: 40px; }
       .empty-state p { font-size: 14px; }
-      .modal .modal-dialog { margin: 0; max-width: 100%; align-items: flex-end; min-height: 100vh; }
-      .modal .modal-content { border-radius: 20px 20px 0 0; max-height: 92vh; overflow-y: auto; }
+      .modal .modal-dialog { margin: 12px; max-width: calc(100% - 24px); align-items: center; min-height: calc(100vh - 24px); }
+      .modal .modal-content { border-radius: 20px; max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
       /* Fix col padding for mobile */
       .row > [class*="col-"] { padding-left: 8px; padding-right: 8px; }
       .row.g-4 { --bs-gutter-x: 12px; --bs-gutter-y: 12px; }
