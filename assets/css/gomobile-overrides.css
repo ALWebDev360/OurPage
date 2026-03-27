@@ -177,8 +177,9 @@
 
   /* ── Banner / Hero — Clean Mobile First ── */
   .main-banner {
-    padding: calc(72px + env(safe-area-inset-top)) 0 40px 0 !important;
+    padding: calc(72px + env(safe-area-inset-top)) 0 30px 0 !important;
     background: #fff !important;
+    min-height: auto !important;
   }
 
   .main-banner:after,
@@ -212,13 +213,17 @@
     font-weight: 700 !important;
     margin-bottom: 14px !important;
     color: #2a2a2a !important;
+    word-break: break-word !important;
   }
 
   .main-banner .left-content p {
     font-size: 14px !important;
-    line-height: 1.6 !important;
-    color: #666 !important;
-    margin-bottom: 10px !important;
+    line-height: 1.7 !important;
+    color: #555 !important;
+    margin-bottom: 12px !important;
+    max-width: 500px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 
   /* Hide test deployment text on mobile */
@@ -321,10 +326,17 @@
   /* ── Cards — GoMobileUX Card Pattern ── */
   .about-us .services .item {
     border-radius: 15px !important;
-    padding: 20px !important;
+    padding: 20px 18px !important;
     margin-bottom: 12px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
     transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+  }
+
+  .about-us .services .item .icon {
+    flex-shrink: 0 !important;
   }
 
   .about-us .services .item:active {
@@ -364,6 +376,17 @@
   /* ── Sections — Consistent Spacing ── */
   .about-us {
     padding: 40px 0 !important;
+  }
+
+  .about-us .section-heading h2,
+  .our-services .section-heading h2 {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+  }
+
+  .our-services .section-heading p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
   }
 
   .our-services {
@@ -413,10 +436,25 @@
 
   #get-started > .container > .row:first-child .col-lg-8 h2 {
     font-size: 22px !important;
+    line-height: 1.3 !important;
+  }
+
+  #get-started > .container > .row:first-child .col-lg-8 p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
   }
 
   #get-started [style*="border-radius:20px"] {
     border-radius: 15px !important;
+    padding: 28px 20px !important;
+  }
+
+  #get-started [style*="border-radius:20px"] h4 {
+    font-size: 17px !important;
+  }
+
+  #get-started [style*="border-radius:20px"] p {
+    font-size: 13px !important;
   }
 
 
@@ -427,6 +465,17 @@
 
   .contact-us .section-heading {
     text-align: center !important;
+    margin-bottom: 20px !important;
+  }
+
+  .contact-us .section-heading h2 {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+  }
+
+  .contact-us .section-heading p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
   }
 
   form#contact {
@@ -497,9 +546,11 @@
     left: 0 !important;
     right: 0 !important;
     z-index: 99 !important;
-    background: #fff !important;
+    background: rgba(255, 255, 255, 0.97) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
     padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px !important;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1) !important;
     display: flex !important;
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
@@ -510,14 +561,16 @@
     background: #fe3f40 !important;
     color: #fff !important;
     text-align: center !important;
-    padding: 14px 20px !important;
+    padding: 16px 20px !important;
     border-radius: 14px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     font-size: 15px !important;
     letter-spacing: 0.5px !important;
     text-transform: uppercase !important;
+    text-decoration: none !important;
     box-shadow: 0 4px 12px rgba(254, 63, 64, 0.3) !important;
     transition: transform 0.15s ease !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 
   .mobile-sticky-cta a:active {
@@ -539,14 +592,19 @@
     border-radius: 20px 20px 0 0 !important;
     border: none !important;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
-    max-height: 90vh !important;
+    max-height: 92vh !important;
     overflow-y: auto !important;
-    padding-bottom: env(safe-area-inset-bottom) !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
   }
 
   .modal .modal-header {
-    padding: 20px 24px !important;
+    padding: 24px 20px 16px 20px !important;
     border-bottom: 1px solid #f0f0f0 !important;
+    position: sticky !important;
+    top: 0 !important;
+    background: inherit !important;
+    z-index: 2 !important;
   }
 
   .modal .modal-header::before {
@@ -554,7 +612,7 @@
     display: block !important;
     width: 36px !important;
     height: 4px !important;
-    background: #ddd !important;
+    background: #ccc !important;
     border-radius: 2px !important;
     position: absolute !important;
     top: 8px !important;
@@ -562,16 +620,27 @@
     transform: translateX(-50%) !important;
   }
 
+  .modal .modal-header .modal-title {
+    font-size: 18px !important;
+  }
+
+  .modal .modal-header .btn-close {
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+  }
+
   .modal .modal-body {
-    padding: 20px 24px !important;
+    padding: 20px !important;
   }
 
   .modal .modal-body .btn {
     border-radius: 14px !important;
-    height: 52px !important;
+    min-height: 52px !important;
     font-size: 16px !important;
     font-weight: 600 !important;
     transition: transform 0.15s ease !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 
   .modal .modal-body .btn:active {
@@ -580,7 +649,7 @@
 
   .modal .modal-body .form-control {
     border-radius: 12px !important;
-    height: 48px !important;
+    min-height: 48px !important;
     font-size: 16px !important;
     background-color: #f5f7fa !important;
     border: 1px solid #e3eaf1 !important;
@@ -591,6 +660,20 @@
     border-color: #1e3c72 !important;
     box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1) !important;
     background-color: #fff !important;
+  }
+
+  .modal .modal-body textarea.form-control {
+    min-height: 100px !important;
+  }
+
+  .modal .modal-body .form-label {
+    font-size: 14px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .modal .modal-body select.form-control {
+    appearance: auto !important;
+    -webkit-appearance: menulist !important;
   }
 
   /* Scheduler steps — GoMobileUX step indicator */
@@ -627,10 +710,36 @@
   /* ── Audit Results — Card Pattern ── */
   .audit-card {
     border-radius: 15px !important;
-    padding: 20px !important;
+    padding: 16px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
     margin-bottom: 16px !important;
   }
+
+  .audit-card h4 {
+    font-size: 16px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .audit-content table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .audit-content table th,
+  .audit-content table td {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Score gauge mobile sizing */
+  .score-ring { width: 150px !important; height: 150px !important; }
+  .score-ring svg { width: 150px !important; height: 150px !important; }
+  .score-number .value { font-size: 38px !important; }
+  .score-breakdown { gap: 16px !important; }
+  .score-breakdown .sb-item .sb-val { font-size: 18px !important; }
+  .score-breakdown .sb-item .sb-label { font-size: 10px !important; }
 
 
   /* ── Footer ── */
@@ -642,6 +751,25 @@
     font-size: 13px !important;
   }
 
+  /* ── Reviews Section ── */
+  #reviews h2 {
+    font-size: 24px !important;
+  }
+
+  #reviews h6 {
+    font-size: 12px !important;
+  }
+
+  /* ── Past Clients Section ── */
+  .past-clients .section-heading h2 {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+  }
+
+  .past-clients .section-heading p {
+    font-size: 14px !important;
+  }
+
 
   /* ── Blog Section Clean-up ── */
   .our-blog .top-dec {
@@ -650,6 +778,50 @@
 
   .our-blog .right-list {
     margin-left: 0 !important;
+  }
+
+  .our-blog .right-list ul li {
+    flex-direction: column !important;
+    margin-bottom: 16px !important;
+  }
+
+  .our-blog .right-list ul li .left-content {
+    padding-right: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
+  .our-blog .right-list ul li .left-content h4 {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+  }
+
+  .our-blog .right-list ul li .left-content p {
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+  }
+
+  .our-blog .right-list ul li .right-image {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .our-blog .right-list ul li .right-image img {
+    border-radius: 12px !important;
+    width: 100% !important;
+  }
+
+  .our-blog .section-heading h2 {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+  }
+
+  .our-blog .left-image .info .inner-content h4 {
+    font-size: 17px !important;
+    line-height: 1.4 !important;
+  }
+
+  .our-blog .left-image .info .inner-content p {
+    font-size: 13px !important;
   }
 
 
@@ -679,6 +851,10 @@
   }
 
   /* Prevent horizontal overflow */
+  html, body {
+    overflow-x: hidden !important;
+  }
+
   .row {
     margin-left: 0 !important;
     margin-right: 0 !important;
@@ -687,6 +863,28 @@
   .col-12, .col-sm-6, .col-md-6, .col-lg-3, .col-lg-4, .col-lg-6, .col-lg-8, .col-lg-12 {
     padding-left: 0 !important;
     padding-right: 0 !important;
+  }
+
+  /* Ensure all links/buttons have good tap targets */
+  a, button, .btn, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent iOS auto-zoom on inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="url"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Smooth scroll for the whole page */
+  html {
+    scroll-behavior: smooth !important;
   }
 }
 
