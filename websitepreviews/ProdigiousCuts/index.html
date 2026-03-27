@@ -63,17 +63,26 @@
       transition: padding 0.3s ease;
     }
     .site-header.scrolled { padding: 10px 0; }
-    .header-inner { display: flex; align-items: center; justify-content: space-between; }
-    .logo {
-      font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900;
-      color: var(--white); text-decoration: none; letter-spacing: -0.5px;
+    .header-inner {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
     }
-    .logo span { color: var(--gold); }
+    .header-left { display: flex; align-items: center; gap: 8px; }
+    .header-center { display: flex; justify-content: center; }
+    .header-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+    .logo-img {
+      height: 60px;
+      width: auto;
+      display: block;
+      /* logo has white bg — invert trick makes it look good on dark header */
+      filter: brightness(0) invert(1) sepia(1) saturate(3) hue-rotate(5deg);
+    }
     .nav-links { display: flex; gap: 32px; list-style: none; }
     .nav-links a { color: var(--gray); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
     .nav-links a:hover { color: var(--white); }
-    .header-cta { display: flex; align-items: center; gap: 16px; }
-    .header-cta .btn { padding: 10px 24px; font-size: 14px; }
+    .header-cta { display: flex; align-items: center; gap: 10px; }
+    .header-cta .btn { padding: 10px 20px; font-size: 13px; }
     .menu-toggle {
       display: none; width: 44px; height: 44px;
       background: none; border: none; cursor: pointer;
@@ -309,20 +318,31 @@
   <header class="site-header" id="site-header">
     <div class="container">
       <div class="header-inner">
-        <button class="menu-toggle" id="menu-toggle" aria-label="Open menu">
-          <span></span><span></span><span></span>
-        </button>
-        <a href="#" class="logo">Prodigious<span>Cuts</span></a>
-        <ul class="nav-links">
-          <li><a href="#services">Services</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#gallery">Gallery</a></li>
-          <li><a href="#reviews">Reviews</a></li>
-          <li><a href="#contact">Contact</a></li>
-        </ul>
-        <div class="header-cta">
-          <a href="tel:+12053019662" class="btn btn-outline" style="padding:10px 20px;font-size:13px;">📞 (205) 301-9662</a>
-          <a href="#booking" class="btn btn-primary" style="padding:10px 24px;font-size:14px;">Book Now</a>
+        <!-- Left: nav links + mobile toggle -->
+        <div class="header-left">
+          <button class="menu-toggle" id="menu-toggle" aria-label="Open menu">
+            <span></span><span></span><span></span>
+          </button>
+          <ul class="nav-links">
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#reviews">Reviews</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+
+        <!-- Center: logo -->
+        <div class="header-center">
+          <a href="#hero">
+            <img src="logo.jpg" alt="Prodigious Cuts" class="logo-img">
+          </a>
+        </div>
+
+        <!-- Right: account options -->
+        <div class="header-right">
+          <a href="#" class="btn btn-outline" style="padding:9px 18px;font-size:13px;">Log In</a>
+          <a href="#booking" class="btn btn-primary" style="padding:9px 18px;font-size:13px;">Sign Up</a>
         </div>
       </div>
     </div>
@@ -659,7 +679,7 @@
   <!-- ── Footer ── -->
   <footer class="site-footer">
     <div class="container">
-      <div class="footer-logo">Prodigious<span>Cuts</span></div>
+      <div class="footer-logo"><img src="logo.jpg" alt="Prodigious Cuts" style="height:50px;filter:brightness(0) invert(1) sepia(1) saturate(3) hue-rotate(5deg);"></div>
       <p>12 N Washington St, Livingston, AL 35470 &nbsp;·&nbsp; (205) 301-9662</p>
       <p style="margin-top:6px;">&copy; 2026 Prodigious Cuts Barbershop. All rights reserved.</p>
       <div class="footer-socials">
