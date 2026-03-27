@@ -17,6 +17,7 @@ import subprocess
 import smtplib
 import logging
 import hashlib
+import hmac
 import threading
 from collections import defaultdict
 from email.mime.text import MIMEText
@@ -270,6 +271,18 @@ def get_email_config():
     return None
 
 
+def _make_unsubscribe_token(email):
+    """Create an HMAC-SHA256 token for the given email address."""
+    return hmac.new(UNSUBSCRIBE_SECRET.encode(), email.lower().strip().encode(), hashlib.sha256).hexdigest()[:40]
+
+
+def _make_unsubscribe_url(email):
+    """Return the full one-click unsubscribe URL for the given email."""
+    from urllib.parse import quote
+    token = _make_unsubscribe_token(email)
+    return f"{FRONTEND_URL}/api/unsubscribe?email={quote(email.lower().strip())}&token={token}"
+
+
 def send_email(to_email, subject, html_body, text_body=None):
     """Send an email via SMTP. Returns True on success, error string on failure."""
     cfg = get_email_config()
@@ -278,6 +291,17 @@ def send_email(to_email, subject, html_body, text_body=None):
     try:
         sender = cfg['smtp_from_email'] or cfg['smtp_user']
         domain = sender.split('@')[-1] if '@' in sender else 'elevatedsolutions.design'
+
+        # --- Inject unsubscribe link into the email body ---
+        unsub_url = _make_unsubscribe_url(to_email)
+        unsub_block = (
+            '<tr><td align="center" style="padding:4px 20px 30px;font-size:11px;color:#bbbbbb;">'
+            '<a href="' + unsub_url + '" style="color:#999999;text-decoration:underline;">Unsubscribe</a>'
+            ' from future emails'
+            '</td></tr>'
+        )
+        html_body = html_body.replace('{{UNSUBSCRIBE_BLOCK}}', unsub_block)
+
         msg = MIMEMultipart("alternative")
         msg["From"] = f"{cfg['smtp_from_name']} <{sender}>" if cfg['smtp_from_name'] else sender
         msg["To"] = to_email
@@ -286,10 +310,13 @@ def send_email(to_email, subject, html_body, text_body=None):
         msg["Message-ID"] = make_msgid(domain=domain)
         msg["Reply-To"] = sender
         msg["MIME-Version"] = "1.0"
-        msg["List-Unsubscribe"] = f"<mailto:{sender}?subject=unsubscribe>"
+        msg["List-Unsubscribe"] = f"<{unsub_url}>, <mailto:{sender}?subject=unsubscribe>"
+        msg["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
         if not text_body:
             text_body = re.sub(r'<[^>]+>', '', html_body)
             text_body = re.sub(r'\n\s*\n+', '\n\n', text_body).strip()
+        else:
+            text_body += f"\n\nTo unsubscribe: {unsub_url}"
         msg.attach(MIMEText(text_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body, "html", "utf-8"))
         port = int(cfg['smtp_port'] or 587)
@@ -344,9 +371,10 @@ def email_wrap(body_html):
         '<tr><td align="center" style="padding:24px 20px 10px;font-size:12px;color:#999999;">\n'
         'Elevated Solutions &mdash; Web Design &amp; Development\n'
         '</td></tr>\n'
-        '<tr><td align="center" style="padding:0 20px 30px;font-size:11px;color:#bbbbbb;">\n'
+        '<tr><td align="center" style="padding:0 20px 20px;font-size:11px;color:#bbbbbb;">\n'
         'You are receiving this because you have an account with Elevated Solutions.\n'
         '</td></tr>\n'
+        '{{UNSUBSCRIBE_BLOCK}}\n'
         '</table>\n'
         '</td></tr></table>\n'
         '</body>\n</html>'
@@ -509,6 +537,9 @@ STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "whsec_REPLACE_M
 STRIPE_CURRENCY = "usd"
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://elevatedsolutions.design")
 stripe.api_key = STRIPE_SECRET_KEY
+
+# --- Unsubscribe Signing Key ---
+UNSUBSCRIBE_SECRET = os.environ.get("UNSUBSCRIBE_SECRET", "es-unsub-xK9m2Qp7vL4r")
 
 # --- Porkbun API Configuration ---
 PORKBUN_API_KEY = os.environ.get("PORKBUN_API_KEY", "")
@@ -716,6 +747,11 @@ def init_db():
     # Add demo_preview_site column if upgrading
     try:
         db.execute("ALTER TABLE users ADD COLUMN demo_preview_site TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    # Add email_unsubscribed column if upgrading
+    try:
+        db.execute("ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0")
     except sqlite3.OperationalError:
         pass
     # Add domain_tlds column to deploy_config if upgrading
@@ -1543,6 +1579,67 @@ def reset_password():
     db.commit()
 
     return jsonify({"message": "Password reset successfully. You can now log in with your new password."})
+
+
+# ── Unsubscribe ──────────────────────────────────────────────────────────────
+@app.route("/api/unsubscribe", methods=["GET"])
+def unsubscribe_get():
+    """Handle unsubscribe link clicks (GET) and RFC 8058 one-click (POST)."""
+    email = (request.args.get("email") or "").lower().strip()
+    token = (request.args.get("token") or "").strip()
+    if not email or not token:
+        return _unsub_page("Invalid unsubscribe link.", success=False), 400
+
+    expected = _make_unsubscribe_token(email)
+    if not hmac.compare_digest(token, expected):
+        return _unsub_page("Invalid unsubscribe link.", success=False), 403
+
+    db = get_db()
+    db.execute("UPDATE users SET email_unsubscribed = 1 WHERE LOWER(email) = ?", (email,))
+    db.commit()
+    return _unsub_page(
+        "You have been unsubscribed from Elevated Solutions marketing emails. "
+        "You will still receive important account and transactional emails."
+    )
+
+
+@app.route("/api/unsubscribe", methods=["POST"])
+def unsubscribe_post():
+    """RFC 8058 one-click unsubscribe (List-Unsubscribe-Post header)."""
+    email = (request.args.get("email") or request.form.get("email") or "").lower().strip()
+    token = (request.args.get("token") or request.form.get("token") or "").strip()
+    if not email or not token:
+        return "", 400
+    expected = _make_unsubscribe_token(email)
+    if not hmac.compare_digest(token, expected):
+        return "", 403
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("UPDATE users SET email_unsubscribed = 1 WHERE LOWER(email) = ?", (email,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+    return "", 200
+
+
+def _unsub_page(message, success=True):
+    """Return a simple branded HTML page for unsubscribe confirmation."""
+    color = "#1e3c72" if success else "#cc3333"
+    icon = "&#10003;" if success else "&#10007;"
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unsubscribe — Elevated Solutions</title>
+<style>
+body{{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f4f4;display:flex;align-items:center;justify-content:center;min-height:100vh}}
+.card{{background:#fff;border-radius:12px;padding:40px;max-width:480px;width:90%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}}
+.icon{{font-size:48px;color:{color};margin-bottom:16px}}
+h1{{font-size:20px;color:#1e3c72;margin:0 0 12px}}
+p{{font-size:14px;color:#555;line-height:1.6;margin:0}}
+</style></head>
+<body><div class="card"><div class="icon">{icon}</div>
+<h1>{'Unsubscribed' if success else 'Error'}</h1>
+<p>{message}</p></div></body></html>"""
 
 
 @app.route("/api/me", methods=["GET"])
