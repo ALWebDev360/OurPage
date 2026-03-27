@@ -7,6 +7,8 @@ app = 'elevatedsolutions-app'
 primary_region = 'iad'
 
 [build]
+  [build.settings]
+    deadline = 600
 
 [env]
   DATA_DIR = "/data"
