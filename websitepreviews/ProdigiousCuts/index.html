@@ -72,11 +72,11 @@
     .header-center { display: flex; justify-content: center; }
     .header-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
     .logo-img {
-      height: 60px;
+      height: 56px;
       width: auto;
       display: block;
-      /* logo has white bg — invert trick makes it look good on dark header */
-      filter: brightness(0) invert(1) sepia(1) saturate(3) hue-rotate(5deg);
+      border-radius: 8px;
+      object-fit: contain;
     }
     .nav-links { display: flex; gap: 32px; list-style: none; }
     .nav-links a { color: var(--gray); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
@@ -294,8 +294,11 @@
       .testimonials-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 768px) {
-      .nav-links, .header-cta { display: none; }
+      .nav-links { display: none; }
+      .header-right { display: none; }
       .menu-toggle { display: flex; }
+      .header-inner { grid-template-columns: auto 1fr auto; }
+      .header-center { justify-content: center; }
       .hero { padding: 100px 0 60px; min-height: auto; }
       .hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
       .hero-content p { margin-left: auto; margin-right: auto; }
@@ -357,6 +360,10 @@
     <a href="#reviews" onclick="closeMobileNav()">Reviews</a>
     <a href="#contact" onclick="closeMobileNav()">Contact</a>
     <a href="#booking" class="btn btn-primary" onclick="closeMobileNav()" style="margin-top:12px;">Book Now</a>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <a href="#" onclick="closeMobileNav()" class="btn btn-outline" style="font-size:14px;padding:10px 24px;">Log In</a>
+      <a href="#booking" onclick="closeMobileNav()" class="btn btn-primary" style="font-size:14px;padding:10px 24px;">Sign Up</a>
+    </div>
   </nav>
 
   <!-- ── Hero ── -->
@@ -679,7 +686,7 @@
   <!-- ── Footer ── -->
   <footer class="site-footer">
     <div class="container">
-      <div class="footer-logo"><img src="logo.jpg" alt="Prodigious Cuts" style="height:50px;filter:brightness(0) invert(1) sepia(1) saturate(3) hue-rotate(5deg);"></div>
+      <div class="footer-logo"><img src="logo.jpg" alt="Prodigious Cuts" style="height:50px;border-radius:8px;object-fit:contain;"></div>
       <p>12 N Washington St, Livingston, AL 35470 &nbsp;·&nbsp; (205) 301-9662</p>
       <p style="margin-top:6px;">&copy; 2026 Prodigious Cuts Barbershop. All rights reserved.</p>
       <div class="footer-socials">
