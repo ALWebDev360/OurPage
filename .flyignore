@@ -1,0 +1,18 @@
+# Submodules (not needed at runtime)
+SEOstats/
+seo-audits-toolkit/
+
+# Node artifacts
+**/node_modules/
+**/dist/
+
+# Dev files
+.git/
+.github/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.db
+prepros.config
+*.code-workspace
