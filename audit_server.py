@@ -359,9 +359,9 @@ def email_button(href, label, color='#1e3c72'):
         '<a href="' + href + '"\n'
         ' target="_blank"\n'
         ' style="background-color:' + color + ';border-radius:8px;color:#ffffff;\n'
-        'display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:15px;\n'
-        'font-weight:600;line-height:48px;text-align:center;text-decoration:none;\n'
-        'width:240px;-webkit-text-size-adjust:none;mso-hide:all;">\n'
+        'display:block;font-family:Arial,Helvetica,sans-serif;font-size:15px;\n'
+        'font-weight:600;line-height:20px;padding:14px 0;text-align:center;text-decoration:none;\n'
+        'width:240px;max-width:100%;margin:0 auto;-webkit-text-size-adjust:none;mso-hide:all;">\n'
         + label +
         '</a>\n'
         '<!--<![endif]-->\n'
