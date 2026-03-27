@@ -299,17 +299,27 @@ def email_wrap(body_html):
 
 
 def email_button(href, label, color='#1e3c72'):
-    """Generate an email-safe CTA button."""
+    """Generate a bulletproof email CTA button that works on mobile and desktop."""
     return (
-        '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto;">\n'
-        '<tr><td align="center" style="background-color:' + color + ';border-radius:8px;">\n'
+        '<div style="margin:28px 0;text-align:center;">\n'
+        '<!--[if mso]>\n'
+        '<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"\n'
+        ' href="' + href + '" style="height:48px;v-text-anchor:middle;width:240px;"\n'
+        ' arcsize="17%" strokecolor="' + color + '" fillcolor="' + color + '">\n'
+        '<w:anchorlock/><center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;\n'
+        'font-size:15px;font-weight:600;">' + label + '</center></v:roundrect>\n'
+        '<![endif]-->\n'
+        '<!--[if !mso]><!-->\n'
         '<a href="' + href + '"\n'
         ' target="_blank"\n'
-        ' style="display:inline-block;padding:14px 36px;color:#ffffff;'
-        'text-decoration:none;font-weight:600;font-size:15px;font-family:Arial,Helvetica,sans-serif;">\n'
+        ' style="background-color:' + color + ';border-radius:8px;color:#ffffff;\n'
+        'display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:15px;\n'
+        'font-weight:600;line-height:48px;text-align:center;text-decoration:none;\n'
+        'width:240px;-webkit-text-size-adjust:none;mso-hide:all;">\n'
         + label +
         '</a>\n'
-        '</td></tr>\n</table>\n'
+        '<!--<![endif]-->\n'
+        '</div>\n'
     )
 
 
