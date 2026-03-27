@@ -18,7 +18,9 @@ seo-audits-toolkit/README.md
 
 # Node artifacts
 **/node_modules/
-**/dist/
+# Exclude dist folders except websitepreviews (those are the built preview sites)
+seo-audits-toolkit/**/dist/
+SEOstats/**/dist/
 
 # Dev files
 .git/
@@ -30,3 +32,13 @@ __pycache__/
 *.db
 prepros.config
 *.code-workspace
+
+# Preview site source files (only dist/ is needed at runtime)
+websitepreviews/*/src/
+websitepreviews/*/node_modules/
+websitepreviews/*/.gitignore
+websitepreviews/*/tsconfig*.json
+websitepreviews/*/vite.config.*
+websitepreviews/*/package*.json
+websitepreviews/*/tailwind.config.*
+websitepreviews/*/tailwind.css
