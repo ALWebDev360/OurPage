@@ -461,8 +461,9 @@ CORS(app, origins=["http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-
 
 @app.before_request
 def enforce_https():
-    """Redirect HTTP to HTTPS in production (when behind a proxy like Fly.io)."""
-    if request.headers.get("X-Forwarded-Proto", "https") == "http":
+    """Redirect HTTP to HTTPS in production (when behind a proxy like Fly.io).
+    Skips internal health/smoke checks from Fly's proxy."""
+    if request.headers.get("X-Forwarded-Proto") == "http":
         url = request.url.replace("http://", "https://", 1)
         return redirect(url, code=301)
 
