@@ -230,6 +230,11 @@
     display: none !important;
   }
 
+  /* Hide Trustpilot stars badge on mobile */
+  .trustpilot-badge {
+    display: none !important;
+  }
+
 
   /* ── Form — GoMobileUX Input Style ── */
   .main-banner .left-content form {
