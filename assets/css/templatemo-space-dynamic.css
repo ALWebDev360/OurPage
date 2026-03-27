@@ -359,14 +359,15 @@ header
 }
 
 .header-area .main-nav .nav-right li a {
-  color: #1e3c72 !important;
-  background-color: transparent;
-  border: 2px solid #1e3c72;
-  padding: 8px 20px;
+  color: #fff !important;
+  background-color: #fe3f40;
+  border: none;
+  padding: 10px 24px;
   font-weight: 600;
   border-radius: 10px;
   font-size: 14px;
   letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(254, 63, 64, 0.3);
   transition: all 0.2s ease;
   height: auto;
   line-height: 1.4;
@@ -375,7 +376,9 @@ header
 .header-area .main-nav .nav-right li a:hover,
 .background-header .main-nav .nav-right li a:hover {
   color: #fff !important;
-  background-color: #1e3c72;
+  background-color: #e8353a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(254, 63, 64, 0.35);
 }
 
 .header-area .main-nav .nav li {
