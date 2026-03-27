@@ -21,6 +21,7 @@ import threading
 from collections import defaultdict
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formatdate, make_msgid
 from datetime import datetime, timedelta
 from functools import wraps
 from urllib.parse import urlparse, urljoin
@@ -275,10 +276,16 @@ def send_email(to_email, subject, html_body, text_body=None):
     if not cfg:
         return "Email not configured"
     try:
+        sender = cfg['smtp_from_email'] or cfg['smtp_user']
+        domain = sender.split('@')[-1] if '@' in sender else 'elevatedsolutions.design'
         msg = MIMEMultipart("alternative")
-        msg["From"] = f"{cfg['smtp_from_name']} <{cfg['smtp_from_email']}>" if cfg['smtp_from_name'] else cfg['smtp_from_email'] or cfg['smtp_user']
+        msg["From"] = f"{cfg['smtp_from_name']} <{sender}>" if cfg['smtp_from_name'] else sender
         msg["To"] = to_email
         msg["Subject"] = subject
+        msg["Date"] = formatdate(localtime=True)
+        msg["Message-ID"] = make_msgid(domain=domain)
+        msg["Reply-To"] = sender
+        msg["MIME-Version"] = "1.0"
         if text_body:
             msg.attach(MIMEText(text_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body, "html", "utf-8"))
@@ -291,7 +298,6 @@ def send_email(to_email, subject, html_body, text_body=None):
             server.starttls()
             server.ehlo()
         server.login(cfg['smtp_user'], cfg['smtp_pass'])
-        sender = cfg['smtp_from_email'] or cfg['smtp_user']
         server.sendmail(sender, to_email, msg.as_string())
         server.quit()
         return True
