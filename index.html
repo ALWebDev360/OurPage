@@ -105,7 +105,7 @@ https://templatemo.com/tm-562-space-dynamic
               <li class="scroll-to-section"><a href="#about">About Us</a></li>
               <li class="scroll-to-section"><a href="#services">Services</a></li>
               <li class="scroll-to-section"><a href="#blog">Insights</a></li> 
-              <li class="scroll-to-section"><a href="#contact">Contact</a></li> 
+              <li class="scroll-to-section"><a href="#contact-section">Contact</a></li> 
               <li class="scroll-to-section"><a href="#" class="open-auth-modal get-started-btn">Get Started</a></li> 
             </ul>        
             <a class='menu-trigger'>
@@ -466,7 +466,7 @@ https://templatemo.com/tm-562-space-dynamic
   </div>
   <!-- ***** Reviews Section End ***** -->
 
-  <div id="contact" class="contact-us section">
+  <div id="contact-section" class="contact-us section">
     <div class="container">
       <div class="row">
         <div class="col-lg-6 align-self-center wow fadeInLeft" data-wow-duration="0.5s" data-wow-delay="0.25s">
@@ -479,7 +479,7 @@ https://templatemo.com/tm-562-space-dynamic
           </div>
         </div>
         <div class="col-lg-6 wow fadeInRight" data-wow-duration="0.5s" data-wow-delay="0.25s">
-          <form id="contact-form" action="" method="post">
+          <form id="contact" action="" method="post">
             <div id="contact-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
             <div class="row">
               <div class="col-lg-6">
@@ -1663,7 +1663,7 @@ https://templatemo.com/tm-562-space-dynamic
     updateAuthUI();
 
     // ── Contact Form Handler ──
-    var contactForm = document.getElementById('contact-form');
+    var contactForm = document.getElementById('contact');
     if (contactForm) {
       contactForm.addEventListener('submit', function(e) {
         e.preventDefault();
