@@ -451,9 +451,17 @@ import stripe
 TOOLKIT_PATH = os.path.join(os.path.dirname(__file__), "seo-audits-toolkit", "server")
 sys.path.insert(0, TOOLKIT_PATH)
 
-from extractor.src.headers import find_all_headers_url
-from extractor.src.images import find_all_images
-from extractor.src.links import find_all_links
+try:
+    from extractor.src.headers import find_all_headers_url
+    from extractor.src.images import find_all_images
+    from extractor.src.links import find_all_links
+    _HAS_EXTRACTOR = True
+except ImportError:
+    logger.warning("seo-audits-toolkit extractor not found — audit detail features will be limited")
+    find_all_headers_url = None
+    find_all_images = None
+    find_all_links = None
+    _HAS_EXTRACTOR = False
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.app", "https://*.ngrok.io", "https://elevatedsolutions.design", "https://www.elevatedsolutions.design", "https://elevatedsolutions-app.fly.dev", "null"])
@@ -1218,22 +1226,25 @@ def audit():
         results["technical"] = {"error": str(e)}
 
     # --- Headers audit ---
-    try:
-        results["headers"] = find_all_headers_url(url)
-    except Exception as e:
-        results["headers"] = {"error": str(e)}
+    if _HAS_EXTRACTOR:
+        try:
+            results["headers"] = find_all_headers_url(url)
+        except Exception as e:
+            results["headers"] = {"error": str(e)}
 
     # --- Images audit ---
-    try:
-        results["images"] = find_all_images(url)
-    except Exception as e:
-        results["images"] = {"error": str(e)}
+    if _HAS_EXTRACTOR:
+        try:
+            results["images"] = find_all_images(url)
+        except Exception as e:
+            results["images"] = {"error": str(e)}
 
     # --- Links audit ---
-    try:
-        results["links"] = find_all_links(url)
-    except Exception as e:
-        results["links"] = {"error": str(e)}
+    if _HAS_EXTRACTOR:
+        try:
+            results["links"] = find_all_links(url)
+        except Exception as e:
+            results["links"] = {"error": str(e)}
 
     # --- Calculate overall score ---
     results["score"] = calculate_score(results)

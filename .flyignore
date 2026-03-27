@@ -1,6 +1,20 @@
-# Submodules (not needed at runtime)
+# Submodules (not needed at runtime, except extractor)
 SEOstats/
-seo-audits-toolkit/
+seo-audits-toolkit/admin/
+seo-audits-toolkit/contribs/
+seo-audits-toolkit/docs/
+seo-audits-toolkit/shared/
+seo-audits-toolkit/server/bert/
+seo-audits-toolkit/server/core/
+seo-audits-toolkit/server/internalLinks/
+seo-audits-toolkit/server/keywords/
+seo-audits-toolkit/server/lighthouse/
+seo-audits-toolkit/server/org/
+seo-audits-toolkit/server/security/
+seo-audits-toolkit/server/users/
+seo-audits-toolkit/server/migrations/
+seo-audits-toolkit/docker-compose.yml
+seo-audits-toolkit/README.md
 
 # Node artifacts
 **/node_modules/
