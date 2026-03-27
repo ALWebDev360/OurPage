@@ -8,7 +8,7 @@ primary_region = 'iad'
 
 [build]
   [build.settings]
-    deadline = 600
+    deadline = 900
 
 [env]
   DATA_DIR = "/data"

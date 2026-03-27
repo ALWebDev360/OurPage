@@ -11,7 +11,8 @@ __pycache__/
 
 # Submodules (not used at runtime)
 SEOstats/
-# Exclude most of seo-audits-toolkit but keep extractor (used by audit_server.py)
+# Only keep seo-audits-toolkit/server/extractor (used by audit_server.py)
+seo-audits-toolkit/.git/
 seo-audits-toolkit/admin/
 seo-audits-toolkit/contribs/
 seo-audits-toolkit/docs/
@@ -25,6 +26,12 @@ seo-audits-toolkit/server/org/
 seo-audits-toolkit/server/security/
 seo-audits-toolkit/server/users/
 seo-audits-toolkit/server/migrations/
+seo-audits-toolkit/server/Dockerfile
+seo-audits-toolkit/server/Pipfile
+seo-audits-toolkit/server/manage.py
+seo-audits-toolkit/server/docker-entrypoint.sh
+seo-audits-toolkit/server/init_data.json
+seo-audits-toolkit/server/requirements.txt
 seo-audits-toolkit/docker-compose.yml
 seo-audits-toolkit/README.md
 
