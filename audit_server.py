@@ -466,6 +466,29 @@ def enforce_https():
         url = request.url.replace("http://", "https://", 1)
         return redirect(url, code=301)
 
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses."""
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn-widgetsrepository.yotpo.com https://cdn.jsdelivr.net https://js.stripe.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://api.stripe.com https://*.ngrok-free.app https://*.ngrok.io https://staticw2.yotpo.com; "
+        "frame-src https://js.stripe.com https://hooks.stripe.com; "
+        "object-src 'none'; "
+        "base-uri 'self';"
+    )
+    return response
+
 # --- Stripe Configuration ---
 # Set these to your Stripe keys (use env vars in production)
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "sk_test_REPLACE_ME")
