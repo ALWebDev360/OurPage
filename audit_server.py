@@ -286,8 +286,11 @@ def send_email(to_email, subject, html_body, text_body=None):
         msg["Message-ID"] = make_msgid(domain=domain)
         msg["Reply-To"] = sender
         msg["MIME-Version"] = "1.0"
-        if text_body:
-            msg.attach(MIMEText(text_body, "plain", "utf-8"))
+        msg["List-Unsubscribe"] = f"<mailto:{sender}?subject=unsubscribe>"
+        if not text_body:
+            text_body = re.sub(r'<[^>]+>', '', html_body)
+            text_body = re.sub(r'\n\s*\n+', '\n\n', text_body).strip()
+        msg.attach(MIMEText(text_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body, "html", "utf-8"))
         port = int(cfg['smtp_port'] or 587)
         if port == 465:
