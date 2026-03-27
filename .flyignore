@@ -1,9 +1,46 @@
-# Submodules (not needed at runtime, except extractor)
+# ── .flyignore ── Minimize upload to Fly/Depot builder ──
+# Goal: only send files needed at runtime (~8MB instead of ~50MB)
+
+# ── Git / IDE / Dev ──
+.git/
+.github/
+.vscode/
+.gitignore
+.gitmodules
+*.md
+prepros.config
+*.code-workspace
+*.log
+*.db
+
+# ── Python build artifacts ──
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# ── Alternate hosting configs (not Fly) ──
+nixpacks.toml
+railway.toml
+runtime.txt
+Procfile
+requirements-audit.txt
+
+# ── Unused data files ──
+Red Circle.json
+
+# ── Entire SEOstats submodule (unused) ──
 SEOstats/
+
+# ── seo-audits-toolkit: only keep server/extractor/ ──
+seo-audits-toolkit/.git/
 seo-audits-toolkit/admin/
 seo-audits-toolkit/contribs/
 seo-audits-toolkit/docs/
 seo-audits-toolkit/shared/
+seo-audits-toolkit/docker-compose.yml
+seo-audits-toolkit/README.md
 seo-audits-toolkit/server/bert/
 seo-audits-toolkit/server/core/
 seo-audits-toolkit/server/internalLinks/
@@ -13,27 +50,18 @@ seo-audits-toolkit/server/org/
 seo-audits-toolkit/server/security/
 seo-audits-toolkit/server/users/
 seo-audits-toolkit/server/migrations/
-seo-audits-toolkit/docker-compose.yml
-seo-audits-toolkit/README.md
-
-# Node artifacts
-**/node_modules/
-# Exclude dist folders except websitepreviews (those are the built preview sites)
+seo-audits-toolkit/server/Dockerfile
+seo-audits-toolkit/server/Pipfile
+seo-audits-toolkit/server/manage.py
+seo-audits-toolkit/server/docker-entrypoint.sh
+seo-audits-toolkit/server/init_data.json
+seo-audits-toolkit/server/requirements.txt
 seo-audits-toolkit/**/dist/
-SEOstats/**/dist/
 
-# Dev files
-.git/
-.github/
-.vscode/
-__pycache__/
-*.pyc
-*.pyo
-*.db
-prepros.config
-*.code-workspace
+# ── Node artifacts ──
+**/node_modules/
 
-# Preview site source files (only dist/ is needed at runtime)
+# ── Preview site dev files (keep index.html and dist/) ──
 websitepreviews/*/src/
 websitepreviews/*/node_modules/
 websitepreviews/*/.gitignore

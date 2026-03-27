@@ -2,16 +2,17 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install system dependencies for lxml
+# Runtime libs for lxml (no -dev / gcc needed — using pre-built wheels)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libxml2-dev \
-    libxslt1-dev \
+    libxml2 \
+    libxslt1.1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Python deps (binary wheels only — no compilation)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
+# Copy app code (kept small via .dockerignore / .flyignore)
 COPY . .
 
 EXPOSE 8080
