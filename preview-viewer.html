@@ -13,17 +13,11 @@
   /* Preview iframe fills screen */
   #preview-frame { width: 100%; height: 100vh; border: none; display: block; }
 
-  @media (max-width: 600px) {
-    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
-    #overlay-bar { order: -1; }
-    #preview-frame { flex: 1; height: auto; min-height: 0; }
-  }
-
   /* Bottom overlay bar */
   #overlay-bar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
     background: linear-gradient(135deg, #1e3c72, #2a5298);
-    color: #fff; padding: 14px 24px 28px 24px; /* extra bottom padding for url bar */
+    color: #fff; padding: 14px 24px 28px 24px;
     display: flex; flex-direction: column; align-items: stretch; justify-content: flex-end;
     box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
     gap: 8px;
@@ -33,36 +27,37 @@
     box-sizing: border-box;
   }
 
-  /* Mobile styles for overlay bar */
+  @keyframes slideUp { to { transform: translateY(0); } }
+
+  /* ── Mobile: bar sits above iframe in normal flow ── */
   @media (max-width: 600px) {
+    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+    #preview-frame { flex: 1; height: auto; min-height: 0; order: 2; }
+
     #overlay-bar {
-      position: relative;
-      top: auto;
-      bottom: auto;
-      left: auto;
-      right: auto;
-      width: 100vw;
-      max-width: 100vw;
+      position: relative !important;
+      top: auto !important; bottom: auto !important; left: auto !important; right: auto !important;
+      order: 1;
+      width: 100%;
+      max-width: 100%;
       border-radius: 0;
-      padding: 6px 8px;
-      gap: 6px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      padding: 8px 10px;
+      gap: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       flex-direction: row !important;
-      align-items: center;
-      justify-content: space-between;
-      transform: translateY(-100%);
-      animation: slideDown 0.5s ease 0.8s forwards;
+      align-items: center !important;
+      justify-content: flex-start !important;
       flex-shrink: 0;
+      transform: none !important;
+      animation: none !important;
     }
     #overlay-bar .bar-left {
-      display: flex;
+      display: flex !important;
       align-items: center;
-      gap: 6px;
-      flex-wrap: nowrap;
       flex-shrink: 0;
     }
     #overlay-bar .bar-text {
-      display: none;
+      display: none !important;
     }
     #overlay-bar .bar-actions {
       display: flex !important;
@@ -70,30 +65,25 @@
       flex-wrap: nowrap !important;
       gap: 6px;
       width: auto !important;
+      margin-left: 8px;
       flex: 1 1 0;
       min-width: 0;
-      justify-content: flex-end;
-      overflow: hidden;
     }
     #overlay-bar .bar-btn {
-      font-size: 11px;
-      padding: 6px 6px;
+      font-size: 11px !important;
+      padding: 7px 10px !important;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      flex-shrink: 1;
       min-width: 0;
-      gap: 4px;
+      border-radius: 8px;
     }
     #overlay-bar .btn-back {
-      font-size: 10px;
-      padding: 5px 7px !important;
-      min-width: 0;
-      flex-shrink: 0;
+      font-size: 12px !important;
+      padding: 6px 8px !important;
+      border-radius: 6px;
     }
   }
-  @keyframes slideUp { to { transform: translateY(0); } }
-  @keyframes slideDown { to { transform: translateY(0); } }
 
   #overlay-bar .bar-left {
     display: flex; align-items: center; gap: 10px;
