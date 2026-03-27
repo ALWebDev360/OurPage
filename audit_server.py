@@ -492,7 +492,7 @@ def add_security_headers(response):
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https:; "
         "connect-src 'self' https://api.stripe.com https://*.ngrok-free.app https://*.ngrok.io https://staticw2.yotpo.com; "
-        "frame-src https://js.stripe.com https://hooks.stripe.com; "
+        "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; "
         "object-src 'none'; "
         "base-uri 'self';"
     )
