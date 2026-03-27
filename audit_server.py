@@ -234,8 +234,8 @@ def send_email(to_email, subject, html_body, text_body=None):
         msg["To"] = to_email
         msg["Subject"] = subject
         if text_body:
-            msg.attach(MIMEText(text_body, "plain"))
-        msg.attach(MIMEText(html_body, "html"))
+            msg.attach(MIMEText(text_body, "plain", "utf-8"))
+        msg.attach(MIMEText(html_body, "html", "utf-8"))
         port = int(cfg['smtp_port'] or 587)
         if port == 465:
             server = smtplib.SMTP_SSL(cfg['smtp_host'], port, timeout=30)
@@ -258,6 +258,70 @@ def send_email_async(to_email, subject, html_body, text_body=None):
     """Fire-and-forget email send in a background thread. Never blocks the caller."""
     t = threading.Thread(target=send_email, args=(to_email, subject, html_body, text_body), daemon=True)
     t.start()
+
+
+def email_wrap(body_html):
+    """Wrap email body content in a branded Unlayer-style outer template.
+    body_html is the inner content (cards, text, buttons) to place inside the wrapper."""
+    return (
+        '<!DOCTYPE html>\n'
+        '<html>\n<head>\n<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width,initial-scale=1.0">\n</head>\n'
+        '<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">\n'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;">\n'
+        '<tr><td align="center" style="padding:30px 10px;">\n'
+        # Logo row
+        '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">\n'
+        '<tr><td align="center" style="padding:20px 0 16px;">\n'
+        '<h2 style="margin:0;font-size:22px;font-weight:700;color:#1e3c72;">Elevated<span style="color:#ff5959;">Solutions</span></h2>\n'
+        '</td></tr>\n'
+        '<tr><td style="height:3px;background:linear-gradient(90deg,#1e3c72,#ff5959);font-size:0;line-height:0;">&nbsp;</td></tr>\n'
+        '</table>\n'
+        # Content card
+        '<table role="presentation" width="600" cellpadding="0" cellspacing="0"\n'
+        ' style="max-width:600px;width:100%;background:#ffffff;border-radius:0 0 8px 8px;overflow:hidden;">\n'
+        '<tr><td style="padding:32px 36px;">\n'
+        + body_html +
+        '\n</td></tr>\n'
+        '</table>\n'
+        # Footer
+        '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">\n'
+        '<tr><td align="center" style="padding:24px 20px 10px;font-size:12px;color:#999999;">\n'
+        'Elevated Solutions &mdash; Web Design &amp; Development\n'
+        '</td></tr>\n'
+        '<tr><td align="center" style="padding:0 20px 30px;font-size:11px;color:#bbbbbb;">\n'
+        'You are receiving this because you have an account with Elevated Solutions.\n'
+        '</td></tr>\n'
+        '</table>\n'
+        '</td></tr></table>\n'
+        '</body>\n</html>'
+    )
+
+
+def email_button(href, label, color='#1e3c72'):
+    """Generate an email-safe CTA button."""
+    return (
+        '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto;">\n'
+        '<tr><td align="center" style="background-color:' + color + ';border-radius:8px;">\n'
+        '<a href="' + href + '"\n'
+        ' target="_blank"\n'
+        ' style="display:inline-block;padding:14px 36px;color:#ffffff;'
+        'text-decoration:none;font-weight:600;font-size:15px;font-family:Arial,Helvetica,sans-serif;">\n'
+        + label +
+        '</a>\n'
+        '</td></tr>\n</table>\n'
+    )
+
+
+def email_info_table(rows):
+    """Generate a styled info table from a list of (label, value) tuples."""
+    html = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"\n style="background:#f8f9fa;border-radius:8px;margin:20px 0;">\n'
+    for i, (label, value) in enumerate(rows):
+        border = 'border-bottom:1px solid #eeeeee;' if i < len(rows) - 1 else ''
+        html += '<tr>\n<td style="padding:10px 16px;font-weight:600;font-size:14px;color:#333333;' + border + '">\n' + label + '</td>\n'
+        html += '<td style="padding:10px 16px;text-align:right;font-size:14px;color:#333333;' + border + '">\n' + value + '</td>\n</tr>\n'
+    html += '</table>\n'
+    return html
 
 
 def get_admin_notify_email():
@@ -1139,24 +1203,16 @@ def _send_verification_email(user_id, name, email):
     try:
         site_url = get_frontend_url()
         verify_url = f"{site_url}/verify-email.html?token={verification_token}"
-        verify_html = f"""
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:30px 20px;">
-            <div style="text-align:center;margin-bottom:30px;">
-                <h1 style="color:#1e3c72;margin:0;">Verify Your Email</h1>
-                <div style="width:60px;height:3px;background:linear-gradient(90deg,#1e3c72,#ff5959);margin:12px auto;"></div>
-            </div>
-            <p style="font-size:16px;color:#333;">Hi <strong>{name}</strong>,</p>
-            <p style="font-size:15px;color:#555;line-height:1.7;">Thank you for creating an account with Elevated Solutions! Please verify your email address by clicking the button below:</p>
-            <div style="text-align:center;margin:30px 0;">
-                <a href="{verify_url}" style="background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Verify Email Address</a>
-            </div>
-            <p style="font-size:13px;color:#888;line-height:1.6;">Or copy and paste this link into your browser:</p>
-            <p style="font-size:13px;color:#1e3c72;word-break:break-all;">{verify_url}</p>
-            <p style="font-size:13px;color:#888;line-height:1.6;">This link will expire in 24 hours. If you didn't create this account, you can safely ignore this email.</p>
-            <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
-            <p style="font-size:12px;color:#aaa;text-align:center;">Elevated Solutions &mdash; Web Design & Development</p>
-        </div>
+        verify_body = f"""
+            <h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">Verify Your Email</h1>
+            <p style="font-size:15px;color:#333;margin:0 0 8px;">Hi <strong>{name}</strong>,</p>
+            <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">Thank you for creating an account with Elevated Solutions! Please verify your email address by clicking the button below:</p>
+            {email_button(verify_url, "Verify Email Address")}
+            <p style="font-size:12px;color:#888;line-height:1.6;margin:0 0 4px;">Or copy and paste this link into your browser:</p>
+            <p style="font-size:12px;color:#1e3c72;word-break:break-all;margin:0 0 12px;">{verify_url}</p>
+            <p style="font-size:12px;color:#888;line-height:1.6;margin:0;">This link will expire in 24 hours. If you didn&rsquo;t create this account, you can safely ignore this email.</p>
         """
+        verify_html = email_wrap(verify_body)
         send_email_async(email, "Verify your email — Elevated Solutions", verify_html,
                          f"Hi {name},\n\nPlease verify your email by visiting: {verify_url}\n\nThis link expires in 24 hours.")
         print(f"[signup] Verification email queued for {email}")
@@ -1209,27 +1265,19 @@ def verify_email():
     # Send welcome email now that they're verified
     try:
         site_url = get_frontend_url()
-        welcome_html = f"""
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:30px 20px;">
-            <div style="text-align:center;margin-bottom:30px;">
-                <h1 style="color:#1e3c72;margin:0;">Welcome to Elevated Solutions</h1>
-                <div style="width:60px;height:3px;background:linear-gradient(90deg,#1e3c72,#ff5959);margin:12px auto;"></div>
-            </div>
-            <p style="font-size:16px;color:#333;">Hi <strong>{row['name']}</strong>,</p>
-            <p style="font-size:15px;color:#555;line-height:1.7;">Your email has been verified! You now have full access to your dashboard.</p>
-            <ul style="font-size:14px;color:#555;line-height:2;">
+        welcome_body = f"""
+            <h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">Welcome to Elevated Solutions</h1>
+            <p style="font-size:15px;color:#333;margin:0 0 8px;">Hi <strong>{row['name']}</strong>,</p>
+            <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 16px;">Your email has been verified! You now have full access to your dashboard.</p>
+            <ul style="font-size:14px;color:#555;line-height:2;margin:0 0 8px;padding-left:20px;">
                 <li>Schedule a free consultation with our team</li>
                 <li>Preview your custom website demo</li>
                 <li>Deploy your site with a custom domain</li>
                 <li>Manage your account and billing</li>
             </ul>
-            <div style="text-align:center;margin:30px 0;">
-                <a href="{site_url}/dashboard.html" style="background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">Go to Your Dashboard</a>
-            </div>
-            <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
-            <p style="font-size:12px;color:#aaa;text-align:center;">Elevated Solutions &mdash; Web Design & Development</p>
-        </div>
+            {email_button(site_url + '/dashboard.html', 'Go to Your Dashboard')}
         """
+        welcome_html = email_wrap(welcome_body)
         send_email_async(row["email"], "Welcome to Elevated Solutions!", welcome_html,
                          f"Hi {row['name']},\n\nYour email is verified! Visit your dashboard at {site_url}/dashboard.html")
     except Exception as e:
@@ -1537,26 +1585,19 @@ def create_consultation():
             nice_date = _dt.strptime(date_str, "%Y-%m-%d").strftime("%A, %B %d, %Y")
         except Exception:
             nice_date = date_str
+        consult_rows = [('Date', nice_date), ('Time', time_str), ('Duration', '30 minutes'), ('Type', type_label)]
+        if notes:
+            consult_rows.append(('Notes', notes))
         send_email_async(
             user_email,
             "Consultation Confirmed — " + nice_date,
-            '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
-            '<div style="background:linear-gradient(135deg,#1e3c72,#2a5298);padding:30px;text-align:center;">'
-            '<h1 style="color:#fff;margin:0;font-size:24px;">Consultation Confirmed</h1></div>'
-            '<div style="padding:30px;">'
-            '<p style="color:#333;font-size:16px;">Hi ' + user_name + ',</p>'
-            '<p style="color:#555;font-size:15px;">Your consultation has been booked! Here are the details:</p>'
-            '<div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #1e3c72;">'
-            '<table style="width:100%;font-size:14px;color:#333;">'
-            '<tr><td style="padding:8px 0;font-weight:600;width:120px;">Date</td><td>' + nice_date + '</td></tr>'
-            '<tr><td style="padding:8px 0;font-weight:600;">Time</td><td>' + time_str + '</td></tr>'
-            '<tr><td style="padding:8px 0;font-weight:600;">Duration</td><td>30 minutes</td></tr>'
-            '<tr><td style="padding:8px 0;font-weight:600;">Type</td><td>' + type_label + '</td></tr>'
-            + ('<tr><td style="padding:8px 0;font-weight:600;">Notes</td><td>' + notes + '</td></tr>' if notes else '') +
-            '</table></div>'
-            '<p style="color:#555;font-size:14px;">We\'ll reach out before the call to confirm. If you need to reschedule, visit your <a href="' + get_frontend_url() + '/dashboard.html" style="color:#1e3c72;font-weight:600;">dashboard</a>.</p>'
-            '<p style="color:#888;font-size:13px;margin-top:30px;">— Elevated Solutions</p>'
-            '</div></div>',
+            email_wrap(
+                '<h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">Consultation Confirmed</h1>'
+                '<p style="font-size:15px;color:#333;margin:0 0 8px;">Hi <strong>' + user_name + '</strong>,</p>'
+                '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">Your consultation has been booked! Here are the details:</p>'
+                + email_info_table(consult_rows) +
+                '<p style="font-size:14px;color:#555;line-height:1.7;margin:0;">We\'ll reach out before the call to confirm. If you need to reschedule, visit your <a href="' + get_frontend_url() + '/dashboard.html" style="color:#1e3c72;font-weight:600;">dashboard</a>.</p>'
+            ),
             'Consultation Confirmed — ' + nice_date + '\nType: ' + type_label + '\nTime: ' + time_str + '\nDuration: 30 minutes'
         )
     except Exception as e:
@@ -1566,24 +1607,18 @@ def create_consultation():
     try:
         admin_email = get_admin_notify_email()
         if admin_email:
+            admin_consult_rows = [('Client', user_name + ' (' + user_email + ')'), ('Date', nice_date), ('Time', time_str), ('Type', type_label)]
+            if notes:
+                admin_consult_rows.append(('Notes', notes))
             send_email_async(
                 admin_email,
                 "New Consultation Booked — " + user_name,
-                '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
-                '<div style="background:linear-gradient(135deg,#e67e22,#d35400);padding:30px;text-align:center;">'
-                '<h1 style="color:#fff;margin:0;font-size:24px;">New Consultation Booked</h1></div>'
-                '<div style="padding:30px;">'
-                '<p style="color:#333;font-size:16px;">A client just scheduled a consultation:</p>'
-                '<div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #e67e22;">'
-                '<table style="width:100%;font-size:14px;color:#333;">'
-                '<tr><td style="padding:8px 0;font-weight:600;width:120px;">Client</td><td>' + user_name + ' (' + user_email + ')</td></tr>'
-                '<tr><td style="padding:8px 0;font-weight:600;">Date</td><td>' + nice_date + '</td></tr>'
-                '<tr><td style="padding:8px 0;font-weight:600;">Time</td><td>' + time_str + '</td></tr>'
-                '<tr><td style="padding:8px 0;font-weight:600;">Type</td><td>' + type_label + '</td></tr>'
-                + ('<tr><td style="padding:8px 0;font-weight:600;">Notes</td><td>' + notes + '</td></tr>' if notes else '') +
-                '</table></div>'
-                '<p style="color:#555;font-size:14px;">View details in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#e67e22;font-weight:600;">admin panel</a>.</p>'
-                '</div></div>',
+                email_wrap(
+                    '<h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">New Consultation Booked</h1>'
+                    '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">A client just scheduled a consultation:</p>'
+                    + email_info_table(admin_consult_rows) +
+                    '<p style="font-size:14px;color:#555;margin:0;">View details in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#1e3c72;font-weight:600;">admin panel</a>.</p>'
+                ),
                 'New consultation from ' + user_name + ' (' + user_email + ')\nDate: ' + nice_date + '\nTime: ' + time_str + '\nType: ' + type_label
             )
     except Exception as e:
@@ -1792,32 +1827,23 @@ def admin_toggle_demo_preview(user_id):
                 u_email = u["email"]
                 u_name = u["name"] or u_email.split("@")[0]
                 dashboard_url = get_frontend_url() + '/dashboard.html?view=demo'
-                preview_html = f"""
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:30px 20px;">
-            <div style="text-align:center;margin-bottom:30px;">
-                <h1 style="color:#1e3c72;margin:0;">Your Preview is Ready!</h1>
-                <div style="width:60px;height:3px;background:linear-gradient(90deg,#1e3c72,#ff5959);margin:12px auto;"></div>
-            </div>
-            <p style="font-size:16px;color:#333;">Hi <strong>{u_name}</strong>,</p>
-            <p style="font-size:15px;color:#555;line-height:1.7;">Great news &mdash; your website preview is now live and ready for you to review!</p>
-            <div style="text-align:center;margin:30px 0;">
-                <a href="{dashboard_url}" style="background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">View Your Preview</a>
-            </div>
-            <p style="font-size:13px;color:#888;line-height:1.6;">Or copy and paste this link into your browser:</p>
-            <p style="font-size:13px;color:#1e3c72;word-break:break-all;">{dashboard_url}</p>
-            <p style="font-size:14px;color:#555;line-height:1.7;">Take your time exploring the design. You can request revisions or approve it directly from your dashboard.</p>
-            <div style="background:#f0f7ff;border-radius:10px;padding:16px;margin:20px 0;">
-                <p style="color:#1e3c72;font-size:13px;margin:0;"><strong>What to do next:</strong></p>
-                <ul style="color:#555;font-size:13px;margin:8px 0 0;padding-left:20px;">
+                preview_body = f"""
+            <h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">Your Preview is Ready!</h1>
+            <p style="font-size:15px;color:#333;margin:0 0 8px;">Hi <strong>{u_name}</strong>,</p>
+            <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">Great news &mdash; your website preview is now live and ready for you to review!</p>
+            {email_button(dashboard_url, "View Your Preview")}
+            <p style="font-size:12px;color:#888;line-height:1.6;margin:0 0 4px;">Or copy and paste this link into your browser:</p>
+            <p style="font-size:12px;color:#1e3c72;word-break:break-all;margin:0 0 16px;">{dashboard_url}</p>
+            <div style="background:#f8f9fa;border-radius:8px;padding:16px;margin:16px 0;">
+                <p style="color:#1e3c72;font-size:13px;margin:0 0 8px;font-weight:600;">What to do next:</p>
+                <ul style="color:#555;font-size:13px;margin:0;padding-left:20px;line-height:1.8;">
                     <li>Review every page and feature</li>
                     <li>Request any changes or revisions</li>
                     <li>Approve and we deploy to your live domain</li>
                 </ul>
             </div>
-            <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
-            <p style="font-size:12px;color:#aaa;text-align:center;">Elevated Solutions &mdash; Web Design &amp; Development</p>
-        </div>
         """
+                preview_html = email_wrap(preview_body)
                 send_email_async(u_email, "Your Website Preview is Ready!", preview_html,
                                  f"Hi {u_name},\n\nYour website preview is ready! Log in to your dashboard to view it:\n{dashboard_url}\n\n-- Elevated Solutions")
                 print(f"[preview-email] Preview ready email queued for {u_email}")
@@ -2099,28 +2125,25 @@ def stripe_webhook():
                             u_name = u.get("name") or u.get("first_name") or u_email.split("@")[0]
                             addon_list = ", ".join(addons) if addons else "None"
                             monthly_str = f"${float(dr['monthly']):.2f}/mo" if float(dr['monthly']) > 0 else "—"
+                            receipt_rows = [
+                                ('Domain', dr["domain"]),
+                                ('Add-ons', addon_list),
+                                ('Subtotal', '$' + f"{float(dr['subtotal']):.2f}"),
+                                ('Tax', '$' + f"{float(dr['tax']):.2f}"),
+                                ('Total Paid', '<strong style="color:#1e3c72;">$' + f"{amount:.2f}" + '</strong>'),
+                                ('Monthly Maintenance', monthly_str),
+                            ]
                             send_email_async(
                                 u_email,
                                 "Payment Receipt — " + dr["domain"],
-                                '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
-                                '<div style="background:linear-gradient(135deg,#1e3c72,#2a5298);padding:30px;text-align:center;">'
-                                '<h1 style="color:#fff;margin:0;font-size:24px;">Payment Receipt</h1></div>'
-                                '<div style="padding:30px;">'
-                                '<p style="color:#333;font-size:16px;">Hi ' + u_name + ',</p>'
-                                '<p style="color:#555;font-size:15px;">Thank you for your purchase! Here\'s your receipt:</p>'
-                                '<div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:20px 0;">'
-                                '<table style="width:100%;font-size:14px;color:#333;border-collapse:collapse;">'
-                                '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Domain</td><td style="text-align:right;">' + dr["domain"] + '</td></tr>'
-                                '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Add-ons</td><td style="text-align:right;">' + addon_list + '</td></tr>'
-                                '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Subtotal</td><td style="text-align:right;">$' + f"{float(dr['subtotal']):.2f}" + '</td></tr>'
-                                '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Tax</td><td style="text-align:right;">$' + f"{float(dr['tax']):.2f}" + '</td></tr>'
-                                '<tr style="border-bottom:2px solid #1e3c72;"><td style="padding:10px 0;font-weight:700;font-size:16px;">Total Paid</td><td style="text-align:right;font-weight:700;font-size:16px;color:#1e3c72;">$' + f"{amount:.2f}" + '</td></tr>'
-                                '<tr><td style="padding:10px 0;font-weight:600;">Monthly Maintenance</td><td style="text-align:right;">' + monthly_str + '</td></tr>'
-                                '</table></div>'
-                                '<p style="color:#555;font-size:14px;">We\'ll begin working on your site right away. You can track progress from your <a href="' + get_frontend_url() + '/dashboard.html" style="color:#1e3c72;font-weight:600;">dashboard</a>.</p>'
-                                '<p style="color:#888;font-size:12px;margin-top:30px;">Transaction date: ' + datetime.now().strftime("%B %d, %Y at %I:%M %p") + '</p>'
-                                '<p style="color:#888;font-size:13px;">— Elevated Solutions</p>'
-                                '</div></div>',
+                                email_wrap(
+                                    '<h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">Payment Receipt</h1>'
+                                    '<p style="font-size:15px;color:#333;margin:0 0 8px;">Hi <strong>' + u_name + '</strong>,</p>'
+                                    '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">Thank you for your purchase! Here\'s your receipt:</p>'
+                                    + email_info_table(receipt_rows) +
+                                    '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">We\'ll begin working on your site right away. You can track progress from your <a href="' + get_frontend_url() + '/dashboard.html" style="color:#1e3c72;font-weight:600;">dashboard</a>.</p>'
+                                    '<p style="font-size:11px;color:#999;margin:16px 0 0;">Transaction date: ' + datetime.now().strftime("%B %d, %Y at %I:%M %p") + '</p>'
+                                ),
                                 'Payment Receipt — ' + dr["domain"] + '\nTotal: $' + f"{amount:.2f}" + '\nMonthly: ' + monthly_str
                             )
                     except Exception as e:
@@ -2131,24 +2154,22 @@ def stripe_webhook():
                         admin_email = get_admin_notify_email()
                         if admin_email and u:
                             u_name_admin = u.get("name") or u.get("first_name") or u["email"].split("@")[0]
+                            admin_purchase_rows = [
+                                ('Client', u_name_admin + ' (' + u["email"] + ')'),
+                                ('Domain', dr["domain"]),
+                                ('Add-ons', addon_list),
+                                ('Total', '<strong style="color:#1e3c72;">$' + f"{amount:.2f}" + '</strong>'),
+                                ('Monthly', monthly_str),
+                            ]
                             send_email_async(
                                 admin_email,
                                 "New Purchase — " + dr["domain"] + " ($" + f"{amount:.2f}" + ")",
-                                '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
-                                '<div style="background:linear-gradient(135deg,#28a745,#218838);padding:30px;text-align:center;">'
-                                '<h1 style="color:#fff;margin:0;font-size:24px;">New Deploy Purchase!</h1></div>'
-                                '<div style="padding:30px;">'
-                                '<p style="color:#333;font-size:16px;">A client just completed a deploy payment:</p>'
-                                '<div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #28a745;">'
-                                '<table style="width:100%;font-size:14px;color:#333;border-collapse:collapse;">'
-                                '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Client</td><td style="text-align:right;">' + u_name_admin + ' (' + u["email"] + ')</td></tr>'
-                                '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Domain</td><td style="text-align:right;">' + dr["domain"] + '</td></tr>'
-                                '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Add-ons</td><td style="text-align:right;">' + addon_list + '</td></tr>'
-                                '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Total</td><td style="text-align:right;font-weight:700;color:#28a745;">$' + f"{amount:.2f}" + '</td></tr>'
-                                '<tr><td style="padding:10px 0;font-weight:600;">Monthly</td><td style="text-align:right;">' + monthly_str + '</td></tr>'
-                                '</table></div>'
-                                '<p style="color:#555;font-size:14px;">Manage in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#28a745;font-weight:600;">admin panel</a>.</p>'
-                                '</div></div>',
+                                email_wrap(
+                                    '<h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">New Deploy Purchase!</h1>'
+                                    '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">A client just completed a deploy payment:</p>'
+                                    + email_info_table(admin_purchase_rows) +
+                                    '<p style="font-size:14px;color:#555;margin:0;">Manage in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#1e3c72;font-weight:600;">admin panel</a>.</p>'
+                                ),
                                 'New purchase from ' + u_name_admin + '\nDomain: ' + dr["domain"] + '\nTotal: $' + f"{amount:.2f}"
                             )
                     except Exception as e:
@@ -2672,26 +2693,18 @@ def admin_apply_coupon(user_id):
     if coupon["free_first_month"]:
         discount_desc += " + free first month of maintenance"
     frontend = get_frontend_url()
-    html_body = f"""
-    <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:0 auto;padding:30px 20px;">
-      <div style="text-align:center;margin-bottom:30px;">
-        <h2 style="color:#1e3c72;margin:0;">Elevated<span style="color:#ff5959;">Solutions</span></h2>
-      </div>
-      <div style="background:linear-gradient(135deg,#1e3c72,#2a5298);border-radius:16px;padding:35px 30px;text-align:center;color:#fff;">
-        <p style="font-size:18px;margin:0 0 8px;opacity:0.9;">A gift, from us to you</p>
-        <h1 style="margin:0 0 20px;font-size:28px;">🎁 You've received a discount!</h1>
-        <div style="background:rgba(255,255,255,0.15);border:2px dashed rgba(255,255,255,0.5);border-radius:12px;padding:16px 28px;display:inline-block;margin-bottom:18px;">
-          <span style="font-size:26px;font-weight:700;letter-spacing:3px;">{coupon['code']}</span>
+    html_body = email_wrap(f"""
+        <h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">You&rsquo;ve Received a Discount!</h1>
+        <p style="font-size:15px;color:#333;margin:0 0 8px;">Hi <strong>{user['name'].split(' ')[0]}</strong>,</p>
+        <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">We&rsquo;ve added a special discount to your account.</p>
+        <div style="background:#f8f9fa;border-radius:8px;padding:24px;text-align:center;margin:0 0 20px;">
+            <p style="font-size:13px;color:#888;margin:0 0 8px;">YOUR CODE</p>
+            <p style="font-size:26px;font-weight:700;letter-spacing:3px;color:#1e3c72;margin:0 0 12px;">{coupon['code']}</p>
+            <p style="font-size:16px;color:#ff5959;font-weight:600;margin:0;">{discount_desc}</p>
         </div>
-        <p style="font-size:17px;margin:0;font-weight:600;">{discount_desc}</p>
-      </div>
-      <div style="text-align:center;margin-top:30px;">
-        <p style="color:#555;font-size:15px;">Hi {user['name'].split(' ')[0]}, we've added a special discount to your account. Log in to your dashboard to see it applied at checkout.</p>
-        <a href="{frontend}/dashboard.html" style="display:inline-block;background:#ff5959;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:600;font-size:15px;margin-top:10px;">View My Dashboard</a>
-      </div>
-      <p style="text-align:center;color:#aaa;font-size:12px;margin-top:30px;">© 2026 Elevated Solutions. All rights reserved.</p>
-    </div>
-    """
+        <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">Log in to your dashboard to see it applied at checkout.</p>
+        {email_button(frontend + '/dashboard.html', 'View My Dashboard', '#ff5959')}
+    """)
     text_body = f"Hi {user['name'].split(' ')[0]}, you've received a discount code: {coupon['code']} ({discount_desc}). Log in to your dashboard at {frontend}/dashboard.html to see it applied."
     send_email_async(user["email"], "🎁 You've received a discount from Elevated Solutions!", html_body, text_body)
 
@@ -2928,7 +2941,11 @@ def admin_test_email():
     if not to:
         return jsonify({"error": "Recipient email required"}), 400
     result = send_email(to, "Test Email from Elevated Solutions",
-        '<div style="font-family:Arial,sans-serif;padding:30px;text-align:center;"><h2 style="color:#1e3c72;">Email Configuration Working!</h2><p style="color:#555;">This is a test email from your Elevated Solutions admin panel.</p><p style="color:#888;font-size:13px;">Sent at ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '</p></div>',
+        email_wrap(
+            '<h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">Email Configuration Working!</h1>'
+            '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">This is a test email from your Elevated Solutions admin panel.</p>'
+            '<p style="font-size:12px;color:#999;margin:16px 0 0;">Sent at ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '</p>'
+        ),
         'Test email from Elevated Solutions. Email configuration is working!')
     if result is True:
         return jsonify({"ok": True, "message": "Test email sent to " + to})
@@ -2998,28 +3015,25 @@ def deploy_payment_status():
                     u_name = user.get("name") or user.get("first_name") or user["email"].split("@")[0]
                     addon_list = ", ".join(addons) if addons else "None"
                     monthly_str = f"${float(row['monthly']):.2f}/mo" if float(row['monthly']) > 0 else "—"
+                    fallback_receipt_rows = [
+                        ('Domain', row["domain"]),
+                        ('Add-ons', addon_list),
+                        ('Subtotal', '$' + f"{float(row['subtotal']):.2f}"),
+                        ('Tax', '$' + f"{float(row['tax']):.2f}"),
+                        ('Total Paid', '<strong style="color:#1e3c72;">$' + f"{amount:.2f}" + '</strong>'),
+                        ('Monthly Maintenance', monthly_str),
+                    ]
                     send_email_async(
                         user["email"],
                         "Payment Receipt — " + row["domain"],
-                        '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
-                        '<div style="background:linear-gradient(135deg,#1e3c72,#2a5298);padding:30px;text-align:center;">'
-                        '<h1 style="color:#fff;margin:0;font-size:24px;">Payment Receipt</h1></div>'
-                        '<div style="padding:30px;">'
-                        '<p style="color:#333;font-size:16px;">Hi ' + u_name + ',</p>'
-                        '<p style="color:#555;font-size:15px;">Thank you for your purchase! Here\'s your receipt:</p>'
-                        '<div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:20px 0;">'
-                        '<table style="width:100%;font-size:14px;color:#333;border-collapse:collapse;">'
-                        '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Domain</td><td style="text-align:right;">' + row["domain"] + '</td></tr>'
-                        '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Add-ons</td><td style="text-align:right;">' + addon_list + '</td></tr>'
-                        '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Subtotal</td><td style="text-align:right;">$' + f"{float(row['subtotal']):.2f}" + '</td></tr>'
-                        '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Tax</td><td style="text-align:right;">$' + f"{float(row['tax']):.2f}" + '</td></tr>'
-                        '<tr style="border-bottom:2px solid #1e3c72;"><td style="padding:10px 0;font-weight:700;font-size:16px;">Total Paid</td><td style="text-align:right;font-weight:700;font-size:16px;color:#1e3c72;">$' + f"{amount:.2f}" + '</td></tr>'
-                        '<tr><td style="padding:10px 0;font-weight:600;">Monthly Maintenance</td><td style="text-align:right;">' + monthly_str + '</td></tr>'
-                        '</table></div>'
-                        '<p style="color:#555;font-size:14px;">We\'ll begin working on your site right away. You can track progress from your <a href="' + get_frontend_url() + '/dashboard.html" style="color:#1e3c72;font-weight:600;">dashboard</a>.</p>'
-                        '<p style="color:#888;font-size:12px;margin-top:30px;">Transaction date: ' + datetime.now().strftime("%B %d, %Y at %I:%M %p") + '</p>'
-                        '<p style="color:#888;font-size:13px;">— Elevated Solutions</p>'
-                        '</div></div>',
+                        email_wrap(
+                            '<h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">Payment Receipt</h1>'
+                            '<p style="font-size:15px;color:#333;margin:0 0 8px;">Hi <strong>' + u_name + '</strong>,</p>'
+                            '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">Thank you for your purchase! Here\'s your receipt:</p>'
+                            + email_info_table(fallback_receipt_rows) +
+                            '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">We\'ll begin working on your site right away. You can track progress from your <a href="' + get_frontend_url() + '/dashboard.html" style="color:#1e3c72;font-weight:600;">dashboard</a>.</p>'
+                            '<p style="font-size:11px;color:#999;margin:16px 0 0;">Transaction date: ' + datetime.now().strftime("%B %d, %Y at %I:%M %p") + '</p>'
+                        ),
                         'Payment Receipt — ' + row["domain"] + '\nTotal: $' + f"{amount:.2f}" + '\nMonthly: ' + monthly_str
                     )
                 except Exception as e:
@@ -3029,24 +3043,22 @@ def deploy_payment_status():
                 try:
                     admin_email = get_admin_notify_email()
                     if admin_email:
+                        fallback_admin_rows = [
+                            ('Client', u_name + ' (' + user["email"] + ')'),
+                            ('Domain', row["domain"]),
+                            ('Add-ons', addon_list),
+                            ('Total', '<strong style="color:#1e3c72;">$' + f"{amount:.2f}" + '</strong>'),
+                            ('Monthly', monthly_str),
+                        ]
                         send_email_async(
                             admin_email,
                             "New Purchase — " + row["domain"] + " ($" + f"{amount:.2f}" + ")",
-                            '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">'
-                            '<div style="background:linear-gradient(135deg,#28a745,#218838);padding:30px;text-align:center;">'
-                            '<h1 style="color:#fff;margin:0;font-size:24px;">New Deploy Purchase!</h1></div>'
-                            '<div style="padding:30px;">'
-                            '<p style="color:#333;font-size:16px;">A client just completed a deploy payment:</p>'
-                            '<div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #28a745;">'
-                            '<table style="width:100%;font-size:14px;color:#333;border-collapse:collapse;">'
-                            '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Client</td><td style="text-align:right;">' + u_name + ' (' + user["email"] + ')</td></tr>'
-                            '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Domain</td><td style="text-align:right;">' + row["domain"] + '</td></tr>'
-                            '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Add-ons</td><td style="text-align:right;">' + addon_list + '</td></tr>'
-                            '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px 0;font-weight:600;">Total</td><td style="text-align:right;font-weight:700;color:#28a745;">$' + f"{amount:.2f}" + '</td></tr>'
-                            '<tr><td style="padding:10px 0;font-weight:600;">Monthly</td><td style="text-align:right;">' + monthly_str + '</td></tr>'
-                            '</table></div>'
-                            '<p style="color:#555;font-size:14px;">Manage in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#28a745;font-weight:600;">admin panel</a>.</p>'
-                            '</div></div>',
+                            email_wrap(
+                                '<h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">New Deploy Purchase!</h1>'
+                                '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">A client just completed a deploy payment:</p>'
+                                + email_info_table(fallback_admin_rows) +
+                                '<p style="font-size:14px;color:#555;margin:0;">Manage in the <a href="' + get_frontend_url() + '/panel-108712b8563d42fc.html" style="color:#1e3c72;font-weight:600;">admin panel</a>.</p>'
+                            ),
                             'New purchase from ' + u_name + '\nDomain: ' + row["domain"] + '\nTotal: $' + f"{amount:.2f}"
                         )
                 except Exception as e:
