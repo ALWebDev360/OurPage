@@ -94,7 +94,34 @@
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255,255,255,0.05);
       transition: padding 0.3s ease;
+      border-radius: 0 !important;
     }
+        /* Back arrow style */
+        .back-arrow {
+          display: inline-flex;
+          align-items: center;
+          font-size: 18px;
+          margin-right: 10px;
+          vertical-align: middle;
+          text-decoration: none;
+          color: var(--white);
+          transition: color 0.2s;
+        }
+        .back-arrow:hover {
+          color: var(--gold);
+        }
+        .back-arrow-icon {
+          font-size: 18px;
+          margin-right: 4px;
+          display: inline-block;
+          vertical-align: middle;
+        }
+        .back-arrow-text {
+          font-size: 14px;
+          display: inline-block;
+          vertical-align: middle;
+          white-space: nowrap;
+        }
     .site-header.scrolled { padding: 12px 0; }
     .header-inner {
       display: flex;
@@ -598,7 +625,8 @@
   <!-- ── Header ── -->
   <header class="site-header" id="site-header">
     <div class="container">
-      <div class="header-inner">
+      <div class="header-inner" style="white-space:nowrap;">
+        <a href="#" class="back-arrow"><span class="back-arrow-icon">&#8592;</span><span class="back-arrow-text">Back</span></a>
         <a href="#" class="logo">Prodigious<span>Cuts</span></a>
         <ul class="nav-links">
           <li><a href="#services">Services</a></li>
