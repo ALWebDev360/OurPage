@@ -439,31 +439,32 @@ https://templatemo.com/tm-562-space-dynamic
           </div>
         </div>
         <div class="col-lg-6 wow fadeInRight" data-wow-duration="0.5s" data-wow-delay="0.25s">
-          <form id="contact" action="" method="post">
+          <form id="contact-form" action="" method="post">
+            <div id="contact-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
             <div class="row">
               <div class="col-lg-6">
                 <fieldset>
-                  <input type="name" name="name" id="name" placeholder="Name" autocomplete="on" required>
+                  <input type="text" name="name" id="contact-name" placeholder="Name" autocomplete="on" required>
                 </fieldset>
               </div>
               <div class="col-lg-6">
                 <fieldset>
-                  <input type="surname" name="surname" id="surname" placeholder="Surname" autocomplete="on" required>
+                  <input type="text" name="surname" id="contact-surname" placeholder="Surname" autocomplete="on" required>
                 </fieldset>
               </div>
               <div class="col-lg-12">
                 <fieldset>
-                  <input type="text" name="email" id="email" pattern="[^ @]*@[^ @]*" placeholder="Your Email" required="">
+                  <input type="email" name="email" id="contact-email" placeholder="Your Email" required>
                 </fieldset>
               </div>
               <div class="col-lg-12">
                 <fieldset>
-                  <textarea name="message" type="text" class="form-control" id="message" placeholder="Message" required=""></textarea>  
+                  <textarea name="message" class="form-control" id="contact-message" placeholder="Message" required=""></textarea>  
                 </fieldset>
               </div>
               <div class="col-lg-12">
                 <fieldset>
-                  <button type="submit" id="form-submit" class="main-button ">Send Message</button>
+                  <button type="submit" id="form-submit" class="main-button">Send Message</button>
                 </fieldset>
               </div>
             </div>
@@ -630,6 +631,7 @@ https://templatemo.com/tm-562-space-dynamic
               <label class="form-label" style="font-weight:600;font-size:14px;">Password</label>
               <input type="password" class="form-control" id="login-password" placeholder="Your password" required style="border-radius:10px;padding:10px 15px;">
             </div>
+            <p style="text-align:right;margin:-5px 0 15px;"><a href="#" id="forgot-password-link" style="color:#1e3c72;font-size:13px;">Forgot Password?</a></p>
             <button type="submit" id="login-btn" class="btn w-100" style="background:#ff5959;color:#fff;font-weight:600;border-radius:10px;padding:12px;border:none;font-size:15px;">Log In</button>
           </form>
 
@@ -1595,7 +1597,10 @@ https://templatemo.com/tm-562-space-dynamic
         });
         listEl.innerHTML = html;
       })
-      .catch(function() {});
+      .catch(function() {
+        var container = document.getElementById('my-consultations');
+        container.style.display = 'none';
+      });
     }
 
     window.cancelConsultation = function(id) {
@@ -1616,6 +1621,111 @@ https://templatemo.com/tm-562-space-dynamic
 
     // Init
     updateAuthUI();
+
+    // ── Contact Form Handler ──
+    var contactForm = document.getElementById('contact-form');
+    if (contactForm) {
+      contactForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('form-submit');
+        var alertEl = document.getElementById('contact-alert');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+        alertEl.style.display = 'none';
+
+        fetch(API + '/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('contact-name').value.trim(),
+            surname: document.getElementById('contact-surname').value.trim(),
+            email: document.getElementById('contact-email').value.trim(),
+            message: document.getElementById('contact-message').value.trim()
+          })
+        })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(res) {
+          alertEl.style.display = 'block';
+          if (!res.ok) {
+            alertEl.style.background = '#f8d7da';
+            alertEl.style.color = '#721c24';
+            alertEl.textContent = res.data.error || 'Something went wrong. Please try again.';
+          } else {
+            alertEl.style.background = '#d4edda';
+            alertEl.style.color = '#155724';
+            alertEl.textContent = res.data.message || 'Message sent successfully!';
+            contactForm.reset();
+          }
+        })
+        .catch(function() {
+          alertEl.style.display = 'block';
+          alertEl.style.background = '#f8d7da';
+          alertEl.style.color = '#721c24';
+          alertEl.textContent = 'Could not connect to server. Please try again.';
+        })
+        .finally(function() { btn.disabled = false; btn.textContent = 'Send Message'; });
+      });
+    }
+
+    // ── Forgot Password Handler ──
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.id === 'forgot-password-link') {
+        e.preventDefault();
+        authAlert.style.display = 'none';
+        signupForm.style.display = 'none';
+        loginForm.style.display = 'none';
+        document.getElementById('auth-toggle').parentElement.style.display = 'none';
+        authTitle.textContent = 'Reset Your Password';
+
+        var forgotHtml = '<div id="forgot-form-wrapper">'
+          + '<p style="color:#666;font-size:14px;margin-bottom:15px;">Enter your email and we\'ll send you a password reset link.</p>'
+          + '<form id="forgot-form">'
+          + '<div class="mb-3"><input type="email" class="form-control" id="forgot-email" placeholder="your@email.com" required style="border-radius:10px;padding:10px 15px;"></div>'
+          + '<button type="submit" id="forgot-btn" class="btn w-100" style="background:#1e3c72;color:#fff;font-weight:600;border-radius:10px;padding:12px;border:none;font-size:15px;">Send Reset Link</button>'
+          + '</form>'
+          + '<p style="text-align:center;margin-top:15px;"><a href="#" id="forgot-back" style="color:#1e3c72;font-weight:600;font-size:14px;">Back to Login</a></p>'
+          + '</div>';
+        authAlert.innerHTML = forgotHtml;
+        authAlert.style.display = 'block';
+        authAlert.style.background = 'transparent';
+        authAlert.style.color = 'inherit';
+
+        document.getElementById('forgot-form').addEventListener('submit', function(ev) {
+          ev.preventDefault();
+          var fbtn = document.getElementById('forgot-btn');
+          fbtn.disabled = true; fbtn.textContent = 'Sending...';
+          fetch(API + '/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: document.getElementById('forgot-email').value.trim() })
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            authAlert.innerHTML = '<div style="text-align:center;padding:10px;"><div style="font-size:36px;margin-bottom:10px;">&#9993;</div>'
+              + '<strong style="color:#155724;">Check your email!</strong><br><br>'
+              + '<span style="color:#666;font-size:14px;">If an account exists with that email, we\'ve sent a password reset link.</span>'
+              + '<br><br><a href="#" id="forgot-back" style="color:#1e3c72;font-weight:600;font-size:14px;">Back to Login</a></div>';
+            authAlert.style.background = '#d4edda';
+          })
+          .catch(function() { fbtn.textContent = 'Failed. Try again.'; fbtn.disabled = false; });
+        });
+      }
+
+      // Back to login from forgot password
+      if (e.target && e.target.id === 'forgot-back') {
+        e.preventDefault();
+        authAlert.style.display = 'none';
+        authAlert.innerHTML = '';
+        isLoginMode = true;
+        signupForm.style.display = 'none';
+        loginForm.style.display = 'block';
+        document.getElementById('auth-toggle').parentElement.style.display = '';
+        authTitle.textContent = 'Log In to Your Account';
+        authToggleText.textContent = "Don't have an account?";
+        authToggle.textContent = 'Sign Up';
+      }
+    });
+
   })();
   </script>
 

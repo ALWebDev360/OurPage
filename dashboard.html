@@ -142,6 +142,7 @@
         <li id="nav-payments" style="display:none;"><a href="#" data-view="payments"><i class="fa fa-credit-card"></i> <span>Payments</span></a></li>
         <li id="nav-demo"><a href="#" data-view="demo" style="opacity:0.55;"><i class="fa fa-eye"></i> <span>Service Preview</span><span id="demo-attention-lottie" style="display:none;width:28px;height:28px;margin-left:auto;flex-shrink:0;"></span></a></li>
         <li><a href="#" data-view="profile"><i class="fa fa-user"></i> <span>My Profile</span></a></li>
+        <li><a href="#" data-view="messages"><i class="fa fa-envelope"></i> <span>Messages</span></a></li>
         <li id="nav-admin" style="display:none;"><a href="panel-108712b8563d42fc.html" style="background:rgba(255,89,89,0.15);"><i class="fa fa-lock"></i> <span>Admin Panel</span></a></li>
       </ul>
       <div class="sidebar-bottom">
@@ -426,6 +427,56 @@
               <h5>Need Help?</h5>
               <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">Questions about billing or payments?</p>
               <a href="mailto:admin@elevatedsolutions.com" class="btn btn-outline-primary btn-sm w-100"><i class="fa fa-envelope" style="margin-right:6px;"></i>Contact Support</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Messages View ── -->
+      <div id="view-messages" class="view-section">
+        <div class="row g-4">
+          <div class="col-lg-8">
+            <div class="panel-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 style="margin:0;">My Messages</h5>
+                <button class="btn btn-accent btn-sm" onclick="showNewMessageForm()"><i class="fa fa-plus" style="margin-right:4px;"></i>New Message</button>
+              </div>
+              <!-- New Message Form (hidden by default) -->
+              <div id="new-message-form" style="display:none;background:#f7f9fc;border-radius:12px;padding:20px;margin-bottom:20px;">
+                <div id="msg-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:12px;font-size:14px;"></div>
+                <form id="send-message-form">
+                  <div class="mb-2">
+                    <select class="form-control" id="msg-category" style="border-radius:10px;padding:8px 12px;font-size:14px;">
+                      <option value="general">General</option>
+                      <option value="revision">Revision Request</option>
+                      <option value="deploy">Deploy</option>
+                      <option value="bug">Bug Report</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div class="mb-2">
+                    <input type="text" class="form-control" id="msg-subject" placeholder="Subject (optional)" maxlength="200" style="border-radius:10px;padding:8px 12px;font-size:14px;">
+                  </div>
+                  <div class="mb-2">
+                    <textarea class="form-control" id="msg-body" rows="3" placeholder="Your message..." required maxlength="5000" style="border-radius:10px;padding:8px 12px;font-size:14px;"></textarea>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm" id="send-msg-btn">Send</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('new-message-form').style.display='none'">Cancel</button>
+                  </div>
+                </form>
+              </div>
+              <div id="messages-list"></div>
+              <div id="messages-empty" class="empty-state" style="display:none;">
+                <i class="fa fa-envelope-o"></i>
+                <p>No messages yet. Send one to get in touch with us!</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="panel-card">
+              <h5>About Messages</h5>
+              <p style="font-size:14px;color:var(--muted);line-height:1.7;">Use messages to request revisions, report bugs, ask questions, or communicate about your project. Our team will reply as soon as possible.</p>
             </div>
           </div>
         </div>
@@ -716,11 +767,12 @@
       if (active) active.classList.add('active');
       document.querySelectorAll('.view-section').forEach(function(s) { s.classList.remove('active'); });
       document.getElementById('view-' + view).classList.add('active');
-      var titles = { overview: 'Overview', consultations: 'My Consultations', profile: 'My Profile', payments: 'Payments', demo: 'Service Preview' };
+      var titles = { overview: 'Overview', consultations: 'My Consultations', profile: 'My Profile', payments: 'Payments', demo: 'Service Preview', messages: 'Messages' };
       document.getElementById('page-title').textContent = titles[view] || view;
       if (view === 'overview') loadDashboard();
       if (view === 'consultations') loadAllConsultations();
       if (view === 'payments') loadPayments();
+      if (view === 'messages') loadMessages();
       // Hide the attention animation once the client clicks the preview tab
       if (view === 'demo') {
         var attentionEl = document.getElementById('demo-attention-lottie');
@@ -728,15 +780,23 @@
       }
     };
 
+    // ── Loading helpers ──
+    var spinnerHTML = '<div style="text-align:center;padding:30px;"><div class="spinner-border text-primary" role="status"></div></div>';
+    function showViewError(containerId, msg) {
+      var el = document.getElementById(containerId);
+      if (el) el.innerHTML = '<div style="text-align:center;padding:20px;color:#dc3545;"><i class="fa fa-exclamation-circle" style="margin-right:6px;"></i>' + (msg || 'Failed to load data. Please try again.') + '</div>';
+    }
+
     // ── Overview / Dashboard ──
     function loadDashboard() {
+      document.getElementById('upcoming-list').innerHTML = spinnerHTML;
+      document.getElementById('upcoming-empty').style.display = 'none';
       fetch(API + '/me/dashboard', { headers: authHeaders() })
       .then(function(r) {
-        if (!r.ok) return null;
+        if (!r.ok) throw new Error('Failed');
         return r.json();
       })
       .then(function(data) {
-        if (!data) return;
         var s = data.stats;
         document.getElementById('stat-total').textContent = s.total;
         document.getElementById('stat-scheduled').textContent = s.scheduled;
@@ -765,23 +825,26 @@
           });
           upList.innerHTML = html;
         }
-      });
+      })
+      .catch(function() { showViewError('upcoming-list'); });
     }
 
     // ── All Consultations ──
     var allConsultations = [];
 
     function loadAllConsultations() {
+      document.getElementById('all-consults-tbody').innerHTML = '<tr><td colspan="5">' + spinnerHTML + '</td></tr>';
+      document.getElementById('consults-empty').style.display = 'none';
       fetch(API + '/consultations', { headers: authHeaders() })
       .then(function(r) {
-        if (!r.ok) return null;
+        if (!r.ok) throw new Error('Failed');
         return r.json();
       })
       .then(function(data) {
-        if (!data) return;
         allConsultations = data.consultations || [];
         renderConsultations();
-      });
+      })
+      .catch(function() { document.getElementById('all-consults-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#dc3545;padding:20px;"><i class="fa fa-exclamation-circle" style="margin-right:6px;"></i>Failed to load consultations.</td></tr>'; });
     }
 
     document.getElementById('filter-status').addEventListener('change', renderConsultations);
@@ -819,16 +882,20 @@
     // ── Cancel Consultation ──
     window.cancelConsult = function(id) {
       if (!confirm('Cancel this consultation?')) return;
+      var btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
       fetch(API + '/consultations/' + id, {
         method: 'DELETE',
         headers: authHeaders()
       })
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        if (d.error) { alert(d.error); return; }
+        if (d.error) { alert(d.error); btn.disabled = false; btn.textContent = 'Cancel'; return; }
         loadDashboard();
         loadAllConsultations();
-      });
+      })
+      .catch(function() { alert('Could not connect to server'); btn.disabled = false; btn.textContent = 'Cancel'; });
     };
 
     // ── Profile ──
@@ -922,8 +989,7 @@
     function loadPayments() {
       fetch(API + '/me/payments', { headers: authHeaders() })
       .then(function(r) {
-        if (!r.ok) return null;
-        if (r.status === 403) return null;
+        if (!r.ok) throw new Error('Failed');
         return r.json();
       })
       .then(function(data) {
@@ -994,7 +1060,8 @@
           document.getElementById('pay-monthly-badge').textContent = 'Not Configured';
           document.getElementById('pay-monthly-badge').style.background = 'var(--muted)';
         }
-      });
+      })
+      .catch(function() { alert('Failed to load payment info. Please refresh the page.'); });
     }
 
     window.payOneTime = function() {
@@ -1020,6 +1087,83 @@
       })
       .catch(function() { alert('Could not connect to server'); btn.disabled = false; btn.innerHTML = '<i class="fa fa-credit-card" style="margin-right:6px;"></i>Set Up Payments'; });
     };
+
+    // ── Messages ──
+    window.showNewMessageForm = function() {
+      document.getElementById('new-message-form').style.display = 'block';
+      document.getElementById('msg-alert').style.display = 'none';
+    };
+
+    function loadMessages() {
+      var list = document.getElementById('messages-list');
+      var empty = document.getElementById('messages-empty');
+      list.innerHTML = '<div style="text-align:center;padding:20px;"><div class="spinner-border text-primary" role="status"></div></div>';
+      fetch(API + '/me/messages', { headers: authHeaders() })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data || !data.messages || data.messages.length === 0) {
+          list.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        var catLabels = { general: 'General', revision: 'Revision', deploy: 'Deploy', bug: 'Bug', other: 'Other' };
+        var html = '';
+        data.messages.forEach(function(m) {
+          var dt = new Date(m.created_at);
+          var dateStr = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          var catLabel = catLabels[m.category] || m.category;
+          html += '<div style="background:#f7f9fc;border-radius:12px;padding:18px 22px;margin-bottom:12px;border-left:4px solid ' + (m.admin_reply ? '#28a745' : '#1e3c72') + ';">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">';
+          html += '<div><strong style="color:#1e3c72;font-size:15px;">' + esc(m.subject || 'No Subject') + '</strong>';
+          html += '<span style="font-size:11px;background:#e0e7f1;color:#1e3c72;padding:2px 8px;border-radius:10px;margin-left:8px;">' + esc(catLabel) + '</span></div>';
+          html += '<span style="font-size:12px;color:#999;">' + dateStr + '</span></div>';
+          html += '<p style="font-size:14px;color:#555;margin:10px 0 0;line-height:1.6;">' + esc(m.body) + '</p>';
+          if (m.admin_reply) {
+            var replyDt = m.replied_at ? new Date(m.replied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+            html += '<div style="background:#eaf7ee;border-radius:10px;padding:14px 18px;margin-top:12px;">';
+            html += '<div style="font-size:12px;font-weight:600;color:#28a745;margin-bottom:6px;"><i class="fa fa-reply" style="margin-right:4px;"></i>Admin Reply' + (replyDt ? ' &mdash; ' + replyDt : '') + '</div>';
+            html += '<p style="font-size:14px;color:#333;margin:0;line-height:1.6;">' + esc(m.admin_reply) + '</p>';
+            html += '</div>';
+          }
+          html += '</div>';
+        });
+        list.innerHTML = html;
+      })
+      .catch(function() { list.innerHTML = '<div class="empty-state"><p style="color:#dc3545;">Failed to load messages</p></div>'; });
+    }
+
+    document.getElementById('send-message-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var btn = document.getElementById('send-msg-btn');
+      var alertEl = document.getElementById('msg-alert');
+      btn.disabled = true; btn.textContent = 'Sending...';
+      alertEl.style.display = 'none';
+      fetch(API + '/messages', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({
+          category: document.getElementById('msg-category').value,
+          subject: document.getElementById('msg-subject').value.trim(),
+          body: document.getElementById('msg-body').value.trim()
+        })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) {
+          alertEl.style.display = 'block'; alertEl.style.background = '#f8d7da'; alertEl.style.color = '#721c24';
+          alertEl.textContent = res.data.error || 'Failed to send.';
+          return;
+        }
+        alertEl.style.display = 'block'; alertEl.style.background = '#d4edda'; alertEl.style.color = '#155724';
+        alertEl.textContent = 'Message sent!';
+        document.getElementById('send-message-form').reset();
+        setTimeout(function() { document.getElementById('new-message-form').style.display = 'none'; }, 1500);
+        loadMessages();
+      })
+      .catch(function() { alertEl.style.display = 'block'; alertEl.style.background = '#f8d7da'; alertEl.style.color = '#721c24'; alertEl.textContent = 'Could not connect.'; })
+      .finally(function() { btn.disabled = false; btn.textContent = 'Send'; });
+    });
 
     // ── Book Consultation Modal ──
     var bookModal = new bootstrap.Modal(document.getElementById('bookModal'));

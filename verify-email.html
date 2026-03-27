@@ -148,19 +148,99 @@
     <a href="index.html" class="btn">Go to Home</a>
   </div>
 
+  <!-- Password Reset state -->
+  <div class="card hidden" id="state-reset">
+    <div class="icon">&#128274;</div>
+    <h1>Reset Your Password</h1>
+    <div class="divider"></div>
+    <p class="message">Enter your new password below.</p>
+    <div id="reset-alert" style="display:none;padding:10px 15px;border-radius:10px;margin-bottom:15px;font-size:14px;"></div>
+    <form id="reset-form">
+      <input type="password" id="reset-pw" placeholder="New password (min. 8 characters)" required minlength="8"
+        style="width:100%;padding:12px 15px;border:1px solid #ddd;border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:10px;">
+      <input type="password" id="reset-pw-confirm" placeholder="Confirm new password" required minlength="8"
+        style="width:100%;padding:12px 15px;border:1px solid #ddd;border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:15px;">
+      <button type="submit" class="btn" id="reset-btn" style="width:100%;border:none;cursor:pointer;">Set New Password</button>
+    </form>
+  </div>
+
+  <!-- Password Reset Success state -->
+  <div class="card hidden" id="state-reset-success">
+    <div class="icon">&#10004;&#65039;</div>
+    <h1 class="success-text">Password Reset!</h1>
+    <div class="divider"></div>
+    <p class="message">Your password has been changed. You can now log in with your new password.</p>
+    <a href="index.html" class="btn">Go to Home</a>
+  </div>
+
   <script>
     (function() {
       var API = window.location.origin;
       var params = new URLSearchParams(window.location.search);
       var token = params.get('token');
+      var resetToken = params.get('reset');
 
       function showState(id) {
-        ['state-verifying','state-success','state-already','state-error','state-no-token'].forEach(function(s) {
+        ['state-verifying','state-success','state-already','state-error','state-no-token','state-reset','state-reset-success'].forEach(function(s) {
           document.getElementById(s).classList.add('hidden');
         });
         document.getElementById(id).classList.remove('hidden');
       }
 
+      // ── Password Reset Flow ──
+      if (resetToken) {
+        showState('state-reset');
+
+        document.getElementById('reset-form').addEventListener('submit', function(e) {
+          e.preventDefault();
+          var pw = document.getElementById('reset-pw').value;
+          var confirm = document.getElementById('reset-pw-confirm').value;
+          var alertEl = document.getElementById('reset-alert');
+          alertEl.style.display = 'none';
+
+          if (pw !== confirm) {
+            alertEl.style.display = 'block';
+            alertEl.style.background = '#f8d7da';
+            alertEl.style.color = '#721c24';
+            alertEl.textContent = 'Passwords do not match.';
+            return;
+          }
+
+          var btn = document.getElementById('reset-btn');
+          btn.disabled = true;
+          btn.textContent = 'Resetting...';
+
+          fetch(API + '/api/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: resetToken, new_password: pw })
+          })
+          .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+          .then(function(res) {
+            if (!res.ok) {
+              alertEl.style.display = 'block';
+              alertEl.style.background = '#f8d7da';
+              alertEl.style.color = '#721c24';
+              alertEl.textContent = res.data.error || 'Reset failed.';
+              btn.disabled = false;
+              btn.textContent = 'Set New Password';
+              return;
+            }
+            showState('state-reset-success');
+          })
+          .catch(function() {
+            alertEl.style.display = 'block';
+            alertEl.style.background = '#f8d7da';
+            alertEl.style.color = '#721c24';
+            alertEl.textContent = 'Could not connect to server.';
+            btn.disabled = false;
+            btn.textContent = 'Set New Password';
+          });
+        });
+        return;
+      }
+
+      // ── Email Verification Flow ──
       if (!token) {
         showState('state-no-token');
         return;

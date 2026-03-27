@@ -15,15 +15,61 @@ import uuid
 import sqlite3
 import subprocess
 import smtplib
+import logging
+import hashlib
 import threading
+from collections import defaultdict
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from functools import wraps
 from urllib.parse import urlparse, urljoin
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, redirect, make_response
 from flask_cors import CORS
+
+# ── Logging Setup ──
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("elevated")
+
+
+# ── In-Memory Rate Limiter ──
+class RateLimiter:
+    """Simple in-memory sliding-window rate limiter."""
+    def __init__(self):
+        self._hits = defaultdict(list)
+        self._lock = threading.Lock()
+
+    def is_allowed(self, key, max_requests, window_seconds):
+        now = time.time()
+        with self._lock:
+            hits = self._hits[key]
+            # Prune old entries
+            cutoff = now - window_seconds
+            self._hits[key] = [t for t in hits if t > cutoff]
+            if len(self._hits[key]) >= max_requests:
+                return False
+            self._hits[key].append(now)
+            return True
+
+_rate_limiter = RateLimiter()
+
+def rate_limit(key_prefix, max_requests=10, window_seconds=60):
+    """Decorator to rate-limit endpoints. Uses IP + key_prefix as bucket."""
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+            key = f"{key_prefix}:{ip}"
+            if not _rate_limiter.is_allowed(key, max_requests, window_seconds):
+                return jsonify({"error": "Too many requests. Please try again later."}), 429
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
 
 # Default TLD list (the TLDs we offer; prices come live from Porkbun)
 DEFAULT_DOMAIN_TLDS = [
@@ -250,7 +296,7 @@ def send_email(to_email, subject, html_body, text_body=None):
         server.quit()
         return True
     except Exception as e:
-        print(f"[send_email] Error: {e}")
+        logger.error(f"[send_email] Error: {e}")
         return str(e)
 
 
@@ -405,6 +451,14 @@ from extractor.src.links import find_all_links
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.app", "https://*.ngrok.io", "https://elevatedsolutions.design", "https://www.elevatedsolutions.design", "https://elevatedsolutions-app.fly.dev", "null"])
+
+
+@app.before_request
+def enforce_https():
+    """Redirect HTTP to HTTPS in production (when behind a proxy like Fly.io)."""
+    if request.headers.get("X-Forwarded-Proto", "https") == "http":
+        url = request.url.replace("http://", "https://", 1)
+        return redirect(url, code=301)
 
 # --- Stripe Configuration ---
 # Set these to your Stripe keys (use env vars in production)
@@ -640,6 +694,14 @@ def init_db():
             db.execute(f"ALTER TABLE payment_config ADD COLUMN {col}")
         except sqlite3.OperationalError:
             pass
+    # Add password_reset_tokens table if upgrading
+    db.execute("""CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )""")
+    db.commit()
     # Seed default availability (Mon-Fri, 9AM-5PM, 30-min slots)
     existing_avail = db.execute("SELECT COUNT(*) FROM availability").fetchone()[0]
     if existing_avail == 0:
@@ -1077,6 +1139,7 @@ def calculate_score(results):
 
 
 @app.route("/api/audit", methods=["POST"])
+@rate_limit("audit", max_requests=5, window_seconds=60)
 def audit():
     """Run SEO audit on a given URL and return combined results."""
     data = request.get_json(silent=True)
@@ -1156,6 +1219,7 @@ def health():
 # ── Account Endpoints ──────────────────────────────────────────
 
 @app.route("/api/signup", methods=["POST"])
+@rate_limit("signup", max_requests=5, window_seconds=300)
 def signup():
     data = request.get_json(silent=True)
     if not data:
@@ -1225,9 +1289,9 @@ def _send_verification_email(user_id, name, email):
         verify_html = email_wrap(verify_body)
         send_email_async(email, "Verify your email — Elevated Solutions", verify_html,
                          f"Hi {name},\n\nPlease verify your email by visiting: {verify_url}\n\nThis link expires in 24 hours.")
-        print(f"[signup] Verification email queued for {email}")
+        logger.info(f"[signup] Verification email queued for {email}")
     except Exception as e:
-        print(f"[signup] Verification email error: {e}")
+        logger.error(f"[signup] Verification email error: {e}")
 
 
 @app.route("/api/verify-email", methods=["POST"])
@@ -1291,7 +1355,7 @@ def verify_email():
         send_email_async(row["email"], "Welcome to Elevated Solutions!", welcome_html,
                          f"Hi {row['name']},\n\nYour email is verified! Visit your dashboard at {site_url}/dashboard.html")
     except Exception as e:
-        print(f"[verify] Welcome email error: {e}")
+        logger.error(f"[verify] Welcome email error: {e}")
 
     return jsonify({
         "message": "Email verified successfully! Welcome aboard.",
@@ -1301,6 +1365,7 @@ def verify_email():
 
 
 @app.route("/api/resend-verification", methods=["POST"])
+@rate_limit("resend", max_requests=3, window_seconds=300)
 def resend_verification():
     data = request.get_json(silent=True)
     email = (data.get("email") or "").strip().lower() if data else ""
@@ -1320,6 +1385,7 @@ def resend_verification():
 
 
 @app.route("/api/login", methods=["POST"])
+@rate_limit("login", max_requests=10, window_seconds=300)
 def login():
     data = request.get_json(silent=True)
     if not data:
@@ -1349,6 +1415,90 @@ def login():
         "token": token,
         "user": {"id": user["id"], "name": user["name"], "email": user["email"], "company": user["company"], "payment_portal": user["payment_portal"]}
     })
+
+
+# ── Password Reset Flow ──
+
+@app.route("/api/forgot-password", methods=["POST"])
+@rate_limit("forgot", max_requests=3, window_seconds=300)
+def forgot_password():
+    """Send a password reset link to the user's email."""
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"message": "If an account with that email exists, a reset link has been sent."}), 200
+
+    db = get_db()
+    user = db.execute("SELECT id, name, email FROM users WHERE email = ?", (email,)).fetchone()
+    if not user:
+        # Don't reveal whether the email exists
+        return jsonify({"message": "If an account with that email exists, a reset link has been sent."}), 200
+
+    # Remove old reset tokens for this user
+    db.execute("DELETE FROM password_reset_tokens WHERE user_id = ?", (user["id"],))
+    reset_token = uuid.uuid4().hex
+    db.execute("INSERT INTO password_reset_tokens (token, user_id) VALUES (?, ?)", (reset_token, user["id"]))
+    db.commit()
+
+    site_url = get_frontend_url()
+    reset_url = f"{site_url}/verify-email.html?reset={reset_token}"
+    html_body = email_wrap(f"""
+        <h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">Reset Your Password</h1>
+        <p style="font-size:15px;color:#333;margin:0 0 8px;">Hi <strong>{user['name']}</strong>,</p>
+        <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 4px;">
+            We received a request to reset your password. Click the button below to choose a new one:
+        </p>
+        {email_button(reset_url, "Reset Password")}
+        <p style="font-size:12px;color:#888;line-height:1.6;margin:0 0 4px;">Or copy and paste this link into your browser:</p>
+        <p style="font-size:12px;color:#1e3c72;word-break:break-all;margin:0 0 12px;">{reset_url}</p>
+        <p style="font-size:12px;color:#888;line-height:1.6;margin:0;">
+            This link expires in 1 hour. If you didn&rsquo;t request a password reset, you can safely ignore this email.
+        </p>
+    """)
+    send_email_async(user["email"], "Password Reset — Elevated Solutions", html_body,
+                     f"Hi {user['name']},\n\nReset your password: {reset_url}\n\nThis link expires in 1 hour.")
+
+    return jsonify({"message": "If an account with that email exists, a reset link has been sent."}), 200
+
+
+@app.route("/api/reset-password", methods=["POST"])
+@rate_limit("reset", max_requests=5, window_seconds=300)
+def reset_password():
+    """Reset password using a valid reset token."""
+    data = request.get_json(silent=True) or {}
+    token = (data.get("token") or "").strip()
+    new_password = data.get("new_password") or ""
+
+    if not token or not new_password:
+        return jsonify({"error": "Token and new password are required"}), 400
+    if len(new_password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
+
+    db = get_db()
+    row = db.execute(
+        "SELECT t.user_id, t.created_at FROM password_reset_tokens t WHERE t.token = ?",
+        (token,)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "Invalid or expired reset link"}), 400
+
+    # Check 1-hour expiry
+    created = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")
+    if datetime.utcnow() - created > timedelta(hours=1):
+        db.execute("DELETE FROM password_reset_tokens WHERE token = ?", (token,))
+        db.commit()
+        return jsonify({"error": "This reset link has expired. Please request a new one."}), 400
+
+    user_id = row["user_id"]
+    db.execute("UPDATE users SET password_hash = ? WHERE id = ?",
+               (generate_password_hash(new_password), user_id))
+    # Remove all reset tokens for this user
+    db.execute("DELETE FROM password_reset_tokens WHERE user_id = ?", (user_id,))
+    # Also invalidate existing auth tokens so old sessions are logged out
+    db.execute("DELETE FROM auth_tokens WHERE user_id = ?", (user_id,))
+    db.commit()
+
+    return jsonify({"message": "Password reset successfully. You can now log in with your new password."})
 
 
 @app.route("/api/me", methods=["GET"])
@@ -1611,7 +1761,7 @@ def create_consultation():
             'Consultation Confirmed — ' + nice_date + '\nType: ' + type_label + '\nTime: ' + time_str + '\nDuration: 30 minutes'
         )
     except Exception as e:
-        print(f"[consultation-email] Error: {e}")
+        logger.error(f"[consultation-email] Error: {e}")
 
     # Notify admin about new consultation
     try:
@@ -1632,7 +1782,7 @@ def create_consultation():
                 'New consultation from ' + user_name + ' (' + user_email + ')\nDate: ' + nice_date + '\nTime: ' + time_str + '\nType: ' + type_label
             )
     except Exception as e:
-        print(f"[consultation-admin-email] Error: {e}")
+        logger.error(f"[consultation-admin-email] Error: {e}")
 
     return jsonify({
         "message": "Consultation scheduled successfully",
@@ -1856,9 +2006,9 @@ def admin_toggle_demo_preview(user_id):
                 preview_html = email_wrap(preview_body)
                 send_email_async(u_email, "Your Website Preview is Ready!", preview_html,
                                  f"Hi {u_name},\n\nYour website preview is ready! Log in to your dashboard to view it:\n{dashboard_url}\n\n-- Elevated Solutions")
-                print(f"[preview-email] Preview ready email queued for {u_email}")
+                logger.info(f"[preview-email] Preview ready email queued for {u_email}")
         except Exception as e:
-            print(f"[preview-email] Error: {e}")
+            logger.error(f"[preview-email] Error: {e}")
 
         return jsonify({"message": "Service preview enabled", "demo_preview": 1, "demo_preview_site": site})
     else:
@@ -2157,7 +2307,7 @@ def stripe_webhook():
                                 'Payment Receipt — ' + dr["domain"] + '\nTotal: $' + f"{amount:.2f}" + '\nMonthly: ' + monthly_str
                             )
                     except Exception as e:
-                        print(f"[receipt-email-webhook] Error: {e}")
+                        logger.error(f"[receipt-email-webhook] Error: {e}")
 
                     # Notify admin about new purchase
                     try:
@@ -2183,7 +2333,7 @@ def stripe_webhook():
                                 'New purchase from ' + u_name_admin + '\nDomain: ' + dr["domain"] + '\nTotal: $' + f"{amount:.2f}"
                             )
                     except Exception as e:
-                        print(f"[purchase-admin-email-webhook] Error: {e}")
+                        logger.error(f"[purchase-admin-email-webhook] Error: {e}")
 
     elif event["type"] == "invoice.paid":
         invoice = event["data"]["object"]
@@ -2433,10 +2583,47 @@ def admin_list_preview_sites():
     return jsonify({"sites": sites})
 
 
+# ── Contact Form (public, no auth) ──
+
+@app.route("/api/contact", methods=["POST"])
+@rate_limit("contact", max_requests=3, window_seconds=300)
+def contact_form():
+    """Handle public contact form submissions."""
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()[:100]
+    surname = (data.get("surname") or "").strip()[:100]
+    email = (data.get("email") or "").strip()[:200]
+    message = (data.get("message") or "").strip()[:5000]
+
+    if not name or not email or not message:
+        return jsonify({"error": "Name, email, and message are required"}), 400
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        return jsonify({"error": "Invalid email address"}), 400
+
+    full_name = f"{name} {surname}".strip()
+
+    # Send to admin via email
+    admin_email = get_admin_notify_email()
+    if admin_email:
+        html_body = email_wrap(f"""
+            <h1 style="margin:0 0 20px;font-size:22px;color:#1e3c72;">New Contact Form Submission</h1>
+            {email_table([
+                ("Name", full_name),
+                ("Email", f'<a href="mailto:{email}">{email}</a>'),
+                ("Message", message.replace(chr(10), "<br>")),
+            ])}
+        """)
+        send_email_async(admin_email, f"Contact Form: {full_name}", html_body,
+                         f"New contact from {full_name} ({email}):\n\n{message}")
+
+    return jsonify({"ok": True, "message": "Your message has been sent. We'll be in touch!"})
+
+
 # ── Messages API ──
 
 @app.route("/api/messages", methods=["POST"])
 @require_auth
+@rate_limit("messages", max_requests=5, window_seconds=60)
 def create_message():
     """Client sends a message / revision request."""
     user = g.current_user
@@ -2696,6 +2883,7 @@ def admin_apply_coupon(user_id):
     if existing:
         return jsonify({"error": "Coupon already applied to this user"}), 409
     db.execute("INSERT INTO user_coupons (user_id, coupon_id) VALUES (?, ?)", (user_id, coupon_id))
+    db.execute("UPDATE coupons SET times_used = times_used + 1 WHERE id = ?", (coupon_id,))
     db.commit()
 
     # Send email notification
@@ -3047,7 +3235,7 @@ def deploy_payment_status():
                         'Payment Receipt — ' + row["domain"] + '\nTotal: $' + f"{amount:.2f}" + '\nMonthly: ' + monthly_str
                     )
                 except Exception as e:
-                    print(f"[receipt-email-fallback] Error: {e}")
+                    logger.error(f"[receipt-email-fallback] Error: {e}")
 
                 # Notify admin about new purchase (fallback path)
                 try:
@@ -3072,11 +3260,11 @@ def deploy_payment_status():
                             'New purchase from ' + u_name + '\nDomain: ' + row["domain"] + '\nTotal: $' + f"{amount:.2f}"
                         )
                 except Exception as e:
-                    print(f"[purchase-admin-email-fallback] Error: {e}")
+                    logger.error(f"[purchase-admin-email-fallback] Error: {e}")
 
                 return jsonify({"found": True, "id": row["id"], "domain": row["domain"], "status": "paid", "total": row["total"]})
         except Exception as e:
-            print(f"[deploy-payment-status] Stripe check error: {e}")
+            logger.error(f"[deploy-payment-status] Stripe check error: {e}")
 
     return jsonify({"found": True, "id": row["id"], "domain": row["domain"], "status": row["status"], "total": row["total"]})
 
@@ -3104,6 +3292,7 @@ def get_my_deploy_pricing():
 
 @app.route("/api/domain-availability", methods=["POST"])
 @require_auth
+@rate_limit("domain", max_requests=10, window_seconds=60)
 def check_domain_availability():
     """Check domain availability via Porkbun checkDomain API (primary) + tldx fallback."""
     data = request.get_json() or {}
@@ -3555,7 +3744,10 @@ def serve_preview(filepath):
     if not os.path.isfile(safe_path):
         return jsonify({"error": "File not found"}), 404
     from flask import send_file
-    return send_file(safe_path)
+    resp = make_response(send_file(safe_path))
+    resp.headers['Referrer-Policy'] = 'no-referrer'
+    resp.headers['X-Content-Type-Options'] = 'nosniff'
+    return resp
 
 
 # ── Static file serving (for ngrok single-tunnel mode) ──
