@@ -13,6 +13,12 @@
   /* Preview iframe fills screen */
   #preview-frame { width: 100%; height: 100vh; border: none; display: block; }
 
+  @media (max-width: 600px) {
+    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+    #overlay-bar { order: -1; }
+    #preview-frame { flex: 1; height: auto; min-height: 0; }
+  }
+
   /* Bottom overlay bar */
   #overlay-bar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
@@ -30,10 +36,11 @@
   /* Mobile styles for overlay bar */
   @media (max-width: 600px) {
     #overlay-bar {
-      top: 0;
+      position: relative;
+      top: auto;
       bottom: auto;
-      left: 0;
-      right: 0;
+      left: auto;
+      right: auto;
       width: 100vw;
       max-width: 100vw;
       border-radius: 0 0 18px 18px;
@@ -41,6 +48,9 @@
       gap: 6px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.18);
       justify-content: flex-start;
+      transform: translateY(-100%);
+      animation: slideDown 0.5s ease 0.8s forwards;
+      flex-shrink: 0;
     }
     #overlay-bar .bar-left {
       justify-content: flex-start;
@@ -82,6 +92,7 @@
     }
   }
   @keyframes slideUp { to { transform: translateY(0); } }
+  @keyframes slideDown { to { transform: translateY(0); } }
 
   #overlay-bar .bar-left {
     display: flex; align-items: center; gap: 10px;
