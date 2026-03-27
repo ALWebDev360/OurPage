@@ -8,3 +8,18 @@ __pycache__/
 .gitignore
 *.md
 .vscode/
+
+# Submodules (not used at runtime)
+SEOstats/
+seo-audits-toolkit/
+
+# Node / build artifacts
+**/node_modules/
+**/dist/
+*.log
+
+# Dev/config files
+prepros.config
+*.code-workspace
+docker-compose*.yml
+.github/
