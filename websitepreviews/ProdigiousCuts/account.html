@@ -6,6 +6,14 @@
   <title>My Account — Prodigious Cuts</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: 'ZADOBESY Regular';
+      src: url('ZADOBESY-Regular.ttf') format('truetype');
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+
     :root{--gold:#C8A96E;--gold-light:#E2CA9E;--dark:#0D0D0D;--dark-2:#1A1A1A;--dark-3:#252525;--white:#FAFAFA;--gray:#999;--radius:12px;}
     *{margin:0;padding:0;box-sizing:border-box;}
     body{font-family:'Inter',sans-serif;background:var(--dark);color:var(--white);min-height:100vh;}
@@ -75,7 +83,7 @@
 
   <div class="top-bar">
     <a href="index.html">← Home</a>
-    <a href="index.html"><img src="logo.jpg" alt="Prodigious Cuts"></a>
+    <a href="index.html"><img src="logo.png" alt="Prodigious Cuts"></a>
     <a href="book.html" style="color:var(--gold);font-weight:600;">+ Book</a>
   </div>
 
@@ -104,17 +112,43 @@
       return {pending:'status-pending',confirmed:'status-confirmed',completed:'status-completed',cancelled:'status-cancelled'}[s] || 'status-pending';
     }
 
+    function getAppointmentDayStart(dateText) {
+      const parts = String(dateText || '').split('-');
+      if (parts.length === 3) {
+        const y = Number(parts[0]);
+        const m = Number(parts[1]) - 1;
+        const d = Number(parts[2]);
+        if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
+          return new Date(y, m, d);
+        }
+      }
+
+      const fallback = new Date(dateText);
+      fallback.setHours(0, 0, 0, 0);
+      return fallback;
+    }
+
     function renderAppointments(appts) {
-      const now = new Date();
-      const upcoming = appts.filter(a => new Date(a.date) >= now && a.status !== 'cancelled' && a.status !== 'completed');
-      const past = appts.filter(a => new Date(a.date) < now || a.status === 'completed' || a.status === 'cancelled');
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const isUpcomingByDay = function(a) {
+        const apptDayStart = getAppointmentDayStart(a.date);
+        return apptDayStart >= todayStart && a.status !== 'cancelled' && a.status !== 'completed';
+      };
+
+      const upcoming = appts.filter(isUpcomingByDay);
+      const past = appts.filter(a => !isUpcomingByDay(a));
 
       function apptCard(a) {
-        const isUpcoming = new Date(a.date) >= now && a.status !== 'cancelled' && a.status !== 'completed';
+        const isUpcoming = isUpcomingByDay(a);
+        const displayPrice = (typeof a.final_price === 'number' || String(a.final_price || '').length)
+          ? a.final_price
+          : a.price;
         return `<div class="appt-card">
           <div class="appt-top">
             <div class="appt-service">${a.service}</div>
-            <div class="appt-price">$${a.price || '—'}</div>
+            <div class="appt-price">$${displayPrice || '—'}</div>
           </div>
           <div class="appt-meta">
             <span>📅 ${a.date}</span>

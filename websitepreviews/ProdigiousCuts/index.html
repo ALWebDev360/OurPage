@@ -8,6 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: 'Ideas Regular';
+      src: url('IdeasRegular.ttf') format('truetype');
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+
     :root {
       --gold: #C8A96E;
       --gold-light: #E2CA9E;
@@ -17,19 +25,20 @@
       --white: #FAFAFA;
       --gray: #999;
       --radius: 12px;
+      --font-main: 'Futura', 'Trebuchet MS', 'Avenir Next', Arial, sans-serif;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: var(--font-main);
       background: var(--dark);
       color: var(--white);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
     }
 
-    h1, h2, h3, h4 { font-family: 'Playfair Display', serif; font-weight: 800; }
+    h1, h2, h3, h4 { font-family: var(--font-main); font-weight: 800; }
     .section-tag {
       display: inline-block;
       font-size: 12px; font-weight: 600;
@@ -65,12 +74,20 @@
     .site-header.scrolled { padding: 10px 0; }
     .header-inner {
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
+      column-gap: 24px;
     }
     .header-left { display: flex; align-items: center; gap: 8px; }
-    .header-center { display: flex; justify-content: center; }
-    .header-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+    .header-center { display: none; }
+    .header-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      justify-self: end;
+      margin-left: auto;
+    }
     .logo-img {
       height: 56px;
       width: auto;
@@ -81,8 +98,28 @@
     .nav-links { display: flex; gap: 32px; list-style: none; }
     .nav-links a { color: var(--gray); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
     .nav-links a:hover { color: var(--white); }
-    .header-cta { display: flex; align-items: center; gap: 10px; }
-    .header-cta .btn { padding: 10px 20px; font-size: 13px; }
+    .header-right .btn {
+      min-width: 118px;
+      padding: 11px 22px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    }
+    .header-right .btn-outline {
+      border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .header-right .btn-outline:hover {
+      border-color: rgba(200,169,110,0.5);
+      background: rgba(200,169,110,0.08);
+    }
+    .header-right .btn-primary {
+      box-shadow: 0 12px 30px rgba(200,169,110,0.22);
+    }
     .menu-toggle {
       display: none; width: 44px; height: 44px;
       background: none; border: none; cursor: pointer;
@@ -97,14 +134,14 @@
       align-items: center; justify-content: center; gap: 24px;
     }
     .mobile-nav.open { display: flex; }
-    .mobile-nav a { color: var(--white); text-decoration: none; font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; transition: color 0.2s; }
+    .mobile-nav a { color: var(--white); text-decoration: none; font-family: var(--font-main); font-size: 28px; font-weight: 700; transition: color 0.2s; }
     .mobile-nav a:hover { color: var(--gold); }
     .mobile-nav-close { position: absolute; top: 20px; right: 24px; width: 44px; height: 44px; background: none; border: none; cursor: pointer; color: var(--white); font-size: 28px; }
 
     /* ── Hero ── */
     .hero {
-      min-height: 100vh; display: flex; align-items: center;
-      position: relative; overflow: hidden; padding: 120px 0 80px;
+      min-height: 100vh; display: flex; align-items: flex-start;
+      position: relative; overflow: hidden; padding: 72px 0 80px;
     }
     .hero::before {
       content: ''; position: absolute; inset: 0;
@@ -113,15 +150,67 @@
         radial-gradient(ellipse at 80% 20%, rgba(200,169,110,0.05) 0%, transparent 50%);
     }
     .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; position: relative; z-index: 1; }
+    .hero-logo-wrap {
+      margin-bottom: 16px;
+      padding-top: 0;
+    }
+    .hero-logo-kicker {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--gold-light);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .hero-logo {
+      width: min(100%, 380px);
+      height: auto;
+      display: block;
+      object-fit: contain;
+      filter: drop-shadow(0 16px 32px rgba(0,0,0,0.32));
+    }
     .hero-content h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1.08; margin-bottom: 20px; }
     .hero-content h1 em { font-style: normal; color: var(--gold); }
+    .hero-content h1 .hero-line-nowrap { white-space: nowrap; }
+    .hero-content h1 .hero-premier { font-family: 'Ideas Regular', var(--font-main); }
     .hero-content p { color: var(--gray); font-size: 17px; line-height: 1.7; margin-bottom: 32px; max-width: 440px; }
     .hero-buttons { display: flex; gap: 14px; flex-wrap: wrap; }
+    .hero-buttons .btn {
+      min-width: 206px;
+      padding: 18px 30px;
+      border-radius: 20px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.22);
+    }
+    .hero-buttons .btn-primary {
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+      box-shadow: 0 18px 40px rgba(200,169,110,0.26);
+    }
+    .hero-buttons .btn-primary:hover {
+      background: linear-gradient(135deg, #edd6aa 0%, var(--gold-light) 100%);
+      box-shadow: 0 22px 44px rgba(200,169,110,0.32);
+    }
+    .hero-buttons .btn-outline {
+      border-color: rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--white);
+    }
+    .hero-buttons .btn-outline:hover {
+      background: rgba(200,169,110,0.08);
+      border-color: rgba(200,169,110,0.4);
+      color: var(--white);
+      box-shadow: 0 18px 38px rgba(0,0,0,0.24);
+    }
     .hero-stats {
       display: flex; gap: 40px; margin-top: 48px;
       padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.08);
     }
-    .hero-stat strong { display: block; font-family: 'Playfair Display', serif; font-size: 32px; color: var(--gold); }
+    .hero-stat strong { display: block; font-family: var(--font-main); font-size: 32px; color: var(--gold); }
     .hero-stat span { font-size: 13px; color: var(--gray); font-weight: 500; }
     .hero-image { position: relative; display: flex; align-items: center; justify-content: center; }
     .hero-image-frame {
@@ -132,61 +221,272 @@
     .hero-image-frame img { width: 100%; height: 100%; object-fit: cover; }
     .hero-badge {
       position: absolute; bottom: -20px; left: -20px;
-      background: var(--gold); color: var(--dark);
-      padding: 16px 22px; border-radius: 16px;
-      font-weight: 700; font-size: 14px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      background: linear-gradient(135deg, #e6cb95 0%, var(--gold) 100%);
+      color: var(--dark);
+      padding: 18px 26px;
+      border-radius: 22px;
+      font-weight: 800; font-size: 16px;
+      letter-spacing: 0.2px;
+      box-shadow: 0 20px 48px rgba(0,0,0,0.42);
       display: flex; align-items: center; gap: 10px;
+      border: 1px solid rgba(255,255,255,0.22);
     }
 
     /* ── Services ── */
-    .services { padding: 100px 0; }
-    .services-header { text-align: center; margin-bottom: 60px; }
-    .services-header .section-subtitle { margin: 0 auto; }
-    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .services {
+      padding: 110px 0;
+    }
+    .services-stage {
+      position: relative;
+      padding: 52px 48px 36px;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(18,18,18,0.98) 0%, rgba(8,8,8,0.98) 100%);
+      box-shadow: 0 26px 60px rgba(0,0,0,0.34);
+    }
+    .services-stage::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.4) 100%);
+      pointer-events: none;
+    }
+    .services-header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      margin-bottom: 34px;
+    }
+    .services-header .section-tag { color: #ead7ab; }
+    .services-header .section-title {
+      margin-bottom: 10px;
+      font-size: clamp(34px, 5vw, 56px);
+      text-shadow: 0 8px 20px rgba(0,0,0,0.26);
+    }
+    .services-header .section-subtitle {
+      margin: 0 auto;
+      color: rgba(255,255,255,0.82);
+      max-width: 620px;
+    }
+    .services-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
     .service-card {
-      background: var(--dark-2); border-radius: 16px; padding: 32px 28px;
-      border: 1px solid rgba(255,255,255,0.05);
-      transition: all 0.35s ease; position: relative; overflow: hidden;
+      min-height: 190px;
+      background: rgba(200,169,110,0.92);
+      color: var(--white);
+      border-radius: 0;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, background 0.25s ease;
+      gap: 8px;
     }
-    .service-card:hover { border-color: rgba(200,169,110,0.2); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+    .service-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(255,255,255,0.18);
+      pointer-events: none;
+    }
+    .service-card:hover {
+      transform: translateY(-4px);
+      background: rgba(214,185,123,0.96);
+    }
+    .service-bookable {
+      cursor: pointer;
+    }
+    .service-bookable:focus-visible {
+      outline: 3px solid rgba(255,255,255,0.75);
+      outline-offset: 2px;
+    }
     .service-icon {
-      width: 52px; height: 52px; background: rgba(200,169,110,0.1);
-      border-radius: 14px; display: flex; align-items: center; justify-content: center;
-      font-size: 24px; margin-bottom: 20px;
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      margin-top: 8px;
     }
-    .service-card h3 { font-size: 20px; margin-bottom: 10px; font-family: 'Inter', sans-serif; font-weight: 700; }
-    .service-card p { color: var(--gray); font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
-    .service-price { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--gold); font-weight: 800; }
-    .service-price small { font-size: 14px; color: var(--gray); font-family: 'Inter', sans-serif; font-weight: 400; }
+    .service-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: transparent;
+      border-radius: 0;
+      box-shadow: none;
+      filter: brightness(0) invert(1);
+    }
+    .service-meta,
+    .service-note,
+    .service-card p,
     .service-badge {
-      display: inline-block; background: rgba(200,169,110,0.15);
-      color: var(--gold); font-size: 11px; font-weight: 600;
-      letter-spacing: 1px; text-transform: uppercase;
-      padding: 4px 10px; border-radius: 20px; margin-bottom: 8px;
+      display: none;
+    }
+    .service-card h3 {
+      font-size: 20px;
+      line-height: 1.2;
+      margin-bottom: 10px;
+      font-family: var(--font-main);
+      font-weight: 700;
+      color: var(--white);
+    }
+    .service-card-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .service-price {
+      font-family: var(--font-main);
+      font-size: 34px;
+      line-height: 1;
+      color: var(--white);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .service-price small {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.78);
+      font-family: var(--font-main);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     /* ── Policies Banner ── */
     .policies-banner {
-      background: var(--dark-2);
-      border: 1px solid rgba(200,169,110,0.2);
-      border-radius: 16px;
-      padding: 28px 32px;
-      margin-top: 40px;
+      position: relative;
+      z-index: 1;
+      background: rgba(18,18,18,0.72);
+      border: 1px solid rgba(234,215,171,0.22);
+      border-radius: 18px;
+      padding: 18px 20px;
+      margin-top: 20px;
       display: flex;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 12px 24px;
       align-items: center;
       justify-content: center;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
     .policy-item {
       display: flex; align-items: center; gap: 10px;
-      font-size: 14px; color: var(--white);
+      font-size: 13px; color: rgba(255,255,255,0.92);
     }
     .policy-item .dot {
       width: 8px; height: 8px; border-radius: 50%;
       background: var(--gold); flex-shrink: 0;
     }
+
+    /* ── Booking Modal ── */
+    body.modal-open { overflow: hidden; }
+    .booking-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.28s ease, visibility 0.28s ease;
+    }
+    .booking-modal.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .booking-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(5,5,5,0.52);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      transition: background 0.28s ease;
+    }
+    .booking-modal-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(1120px, 100%);
+      height: min(90vh, 900px);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(10,10,10,0.98);
+      box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+    }
+    .booking-modal.open .booking-modal-dialog {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .booking-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(18,18,18,0.94);
+    }
+    .booking-modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      line-height: 1.1;
+      margin: 0;
+    }
+    .booking-modal-subtitle {
+      margin: 2px 0 0;
+      font-size: 13px;
+      color: var(--gray);
+    }
+    .booking-modal-close {
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.02);
+      color: var(--white);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .booking-modal-close:hover {
+      border-color: rgba(200,169,110,0.5);
+      color: var(--gold-light);
+    }
+    .booking-modal-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: var(--dark);
+      flex: 1;
+    }
+
 
     /* ── About ── */
     .about { padding: 100px 0; background: var(--dark-2); }
@@ -197,12 +497,22 @@
     }
     .about-image img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
     .about-content .section-subtitle { margin-bottom: 28px; }
-    .about-features { list-style: none; display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
-    .about-features li { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 500; }
-    .about-features li::before {
-      content: '✓'; display: inline-flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; background: rgba(200,169,110,0.12);
-      color: var(--gold); border-radius: 8px; font-size: 13px; font-weight: 700; flex-shrink: 0;
+    .about-features {
+      list-style: disc;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 32px;
+      padding-left: 22px;
+    }
+    .about-features li {
+      display: list-item;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--white);
+    }
+    .about-features li::marker {
+      color: var(--gold);
     }
 
     /* ── Gallery ── */
@@ -244,10 +554,10 @@
     .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
     .contact-info-item { display: flex; gap: 16px; margin-bottom: 28px; }
     .contact-info-icon { width: 48px; height: 48px; background: rgba(200,169,110,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    .contact-info-item h4 { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .contact-info-item h4 { font-family: var(--font-main); font-weight: 600; font-size: 15px; margin-bottom: 4px; }
     .contact-info-item p { color: var(--gray); font-size: 14px; }
     .contact-hours { background: var(--dark-3); border-radius: 16px; padding: 28px; margin-top: 20px; }
-    .contact-hours h4 { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 16px; margin-bottom: 16px; color: var(--gold); }
+    .contact-hours h4 { font-family: var(--font-main); font-weight: 700; font-size: 16px; margin-bottom: 16px; color: var(--gold); }
     .contact-hours-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
     .contact-hours-row:last-child { border: none; }
     .contact-hours-row span:first-child { color: var(--gray); }
@@ -260,7 +570,7 @@
     .form-group select {
       background: var(--dark-3); border: 1px solid rgba(255,255,255,0.08);
       border-radius: var(--radius); padding: 14px 16px;
-      color: var(--white); font-size: 15px; font-family: 'Inter', sans-serif;
+      color: var(--white); font-size: 15px; font-family: var(--font-main);
       transition: border-color 0.2s; outline: none;
     }
     .form-group input:focus,
@@ -271,7 +581,7 @@
 
     /* ── Footer ── */
     .site-footer { padding: 40px 0; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; }
-    .footer-logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; margin-bottom: 8px; }
+    .footer-logo { font-family: var(--font-main); font-size: 20px; font-weight: 900; margin-bottom: 8px; }
     .footer-logo span { color: var(--gold); }
     .site-footer p { color: var(--gray); font-size: 13px; }
     .footer-socials { display: flex; justify-content: center; gap: 16px; margin-top: 16px; }
@@ -289,7 +599,8 @@
 
     /* ── Responsive ── */
     @media (max-width: 1024px) {
-      .services-grid { grid-template-columns: repeat(2, 1fr); }
+      .services-stage { padding: 44px 28px 28px; }
+      .services-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .gallery-grid { grid-template-columns: repeat(2, 1fr); }
       .testimonials-grid { grid-template-columns: 1fr; }
     }
@@ -297,21 +608,33 @@
       .nav-links { display: none; }
       .header-right { display: none; }
       .menu-toggle { display: flex; }
-      .header-inner { grid-template-columns: auto 1fr auto; }
-      .header-center { justify-content: center; }
-      .hero { padding: 100px 0 60px; min-height: auto; }
+      .header-inner { grid-template-columns: 1fr auto; }
+      .hero { padding: 68px 0 60px; min-height: auto; }
       .hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+      .hero-logo-wrap { padding-top: 0; }
+      .hero-logo { margin: 0 auto; width: min(100%, 320px); }
       .hero-content p { margin-left: auto; margin-right: auto; }
       .hero-buttons { justify-content: center; }
+      .hero-buttons .btn { min-width: 0; width: 100%; max-width: 280px; }
       .hero-stats { justify-content: center; }
       .hero-image-frame { max-width: 320px; margin: 0 auto; }
       .hero-badge { bottom: -14px; left: 50%; transform: translateX(-50%); }
-      .services-grid { grid-template-columns: 1fr; }
+      .services-stage { padding: 32px 18px 20px; }
+      .services-grid { grid-template-columns: 1fr; gap: 12px; }
+      .service-card { min-height: 168px; }
+      .service-icon { width: 62px; height: 62px; font-size: 32px; }
       .about-grid { grid-template-columns: 1fr; }
       .gallery-grid { grid-template-columns: repeat(2, 1fr); }
       .contact-grid { grid-template-columns: 1fr; }
       .form-row { flex-direction: column; }
       .services, .about, .gallery, .testimonials, .booking, .contact { padding: 60px 0; }
+      .booking-modal { padding: 8px; }
+      .booking-modal-dialog {
+        width: 100%;
+        height: min(95vh, 980px);
+        border-radius: 14px;
+      }
+      .booking-modal-title { font-size: 20px; }
     }
   </style>
 </head>
@@ -338,14 +661,20 @@
         <!-- Center: logo -->
         <div class="header-center">
           <a href="#hero">
-            <img src="logo.jpg" alt="Prodigious Cuts" class="logo-img">
+            <img src="logo.png" alt="Prodigious Cuts" class="logo-img">
           </a>
         </div>
 
         <!-- Right: account options -->
         <div class="header-right">
-          <a href="login.html" class="btn btn-outline" style="padding:9px 18px;font-size:13px;">Log In</a>
-          <a href="login.html#register" class="btn btn-primary" style="padding:9px 18px;font-size:13px;">Sign Up</a>
+          <div id="auth-links-logged-out" style="display:flex;gap:12px;">
+            <a href="login.html" class="btn btn-outline">Log In</a>
+            <a href="login.html#register" class="btn btn-primary">Sign Up</a>
+          </div>
+          <div id="auth-links-logged-in" style="display:none;gap:12px;">
+            <a href="account.html" class="btn btn-outline">My Account</a>
+            <button type="button" class="btn btn-primary" id="logout-btn">Log Out</button>
+          </div>
         </div>
       </div>
     </div>
@@ -359,10 +688,14 @@
     <a href="#gallery" onclick="closeMobileNav()">Gallery</a>
     <a href="#reviews" onclick="closeMobileNav()">Reviews</a>
     <a href="#contact" onclick="closeMobileNav()">Contact</a>
-    <a href="book.html" class="btn btn-primary" onclick="closeMobileNav()" style="margin-top:12px;">Book Now</a>
-    <div style="display:flex;gap:12px;margin-top:8px;">
-      <a href="login.html" onclick="closeMobileNav()" class="btn btn-outline" style="font-size:14px;padding:10px 24px;">Log In</a>
-      <a href="login.html#register" onclick="closeMobileNav()" class="btn btn-primary" style="font-size:14px;padding:10px 24px;">Sign Up</a>
+            <a href="book.html" class="btn btn-primary" onclick="closeMobileNav()" style="margin-top:12px;">Book Now</a>
+            <div id="mobile-auth-logged-out" style="display:flex;gap:12px;margin-top:8px;">
+              <a href="login.html" onclick="closeMobileNav()" class="btn btn-outline" style="font-size:14px;padding:10px 24px;">Log In</a>
+              <a href="login.html#register" onclick="closeMobileNav()" class="btn btn-primary" style="font-size:14px;padding:10px 24px;">Sign Up</a>
+            </div>
+            <div id="mobile-auth-logged-in" style="display:none;gap:12px;margin-top:8px;">
+              <a href="account.html" onclick="closeMobileNav()" class="btn btn-outline" style="font-size:14px;padding:10px 24px;">My Account</a>
+              <button type="button" onclick="handleLogout()" class="btn btn-primary" style="font-size:14px;padding:10px 24px;">Log Out</button>
     </div>
   </nav>
 
@@ -371,11 +704,14 @@
     <div class="container">
       <div class="hero-grid">
         <div class="hero-content fade-in">
-          <div class="section-tag">Premium Barbershop · Livingston, AL</div>
-          <h1>Where <em>Precision</em> Meets Style</h1>
+          <div class="hero-logo-wrap">
+            <span class="hero-logo-kicker">Welcome To</span>
+            <img src="logo.png" alt="Prodigious Cuts" class="hero-logo">
+          </div>
+          <h1><span class="hero-line-nowrap">Livingston's <em class="hero-premier">Premier</em></span> Barbershop</h1>
           <p>Fresh fades, clean lineups, beard work, kids cuts, and more — crafted by skilled barbers who take pride in every detail. Walk-ins welcome, appointments preferred.</p>
           <div class="hero-buttons">
-            <a href="tel:+12053019662" class="btn btn-primary">📞 Book Now</a>
+            <a href="book.html" class="btn btn-primary">📞 Book Now</a>
             <a href="#services" class="btn btn-outline">View Services</a>
           </div>
           <div class="hero-stats">
@@ -409,76 +745,96 @@
   <!-- ── Services ── -->
   <section class="services" id="services">
     <div class="container">
-      <div class="services-header fade-in">
-        <div class="section-tag">Services &amp; Pricing</div>
-        <h2 class="section-title">Every Cut, Every Style</h2>
-        <p class="section-subtitle">From fresh fades to kids cuts — precise, affordable, and always on point.</p>
-      </div>
-      <div class="services-grid">
-        <div class="service-card fade-in">
-          <div class="service-icon">✂️</div>
-          <div class="service-badge">Appointments</div>
-          <h3>Men's Haircut</h3>
-          <p>Precision cut tailored to your style. Appointments available Tuesday; walk-ins welcome Wed–Sat.</p>
-          <div class="service-price">$30</div>
+      <div class="services-stage fade-in">
+        <div class="services-header">
+          <div class="section-tag">Services &amp; Pricing</div>
+          <h2 class="section-title">Barbershop Services</h2>
+          <p class="section-subtitle">Fresh cuts, sharp finishes, and detail work tailored to the way Prodigious Cuts serves Livingston.</p>
         </div>
-        <div class="service-card fade-in">
-          <div class="service-icon">🪒</div>
-          <h3>Men's Beard &amp; Taper</h3>
-          <p>Sharp taper with a clean beard trim and lineup. Looking fresh from head to chin.</p>
-          <div class="service-price">$20</div>
+        <div class="services-grid">
+          <div class="service-card service-bookable" role="button" tabindex="0" data-service="Men's Haircut" aria-label="Book Men's Haircut">
+            <h3>Men's Haircut</h3>
+            <div class="service-card-bottom">
+              <div class="service-price">$30<small>Tuesday Appointments</small></div>
+            </div>
+            <div class="service-icon"><img src="assets/images/mens%20cut.png" alt="Men's haircut icon"></div>
+          </div>
+          <div class="service-card service-bookable" role="button" tabindex="0" data-service="Men's Beard &amp; Taper" aria-label="Book Men's Beard and Taper">
+            <h3>Men's Beard &amp; Taper</h3>
+            <div class="service-card-bottom">
+              <div class="service-price">$20<small>Sharp Finish</small></div>
+            </div>
+            <div class="service-icon"><img src="assets/images/men+bear.png" alt="Men's beard and taper icon"></div>
+          </div>
+          <div class="service-card service-bookable" role="button" tabindex="0" data-service="Women's Haircut" aria-label="Book Women's Haircut">
+            <h3>Women's Haircut</h3>
+            <div class="service-card-bottom">
+              <div class="service-price">$20<small>Clean Styling</small></div>
+            </div>
+            <div class="service-icon"><img src="assets/images/womenscut.png" alt="Women's haircut icon"></div>
+          </div>
+          <div class="service-card service-bookable" role="button" tabindex="0" data-service="Women's Cut + Design" aria-label="Book Women's Cut plus Design">
+            <h3>Women's Cut + Design</h3>
+            <div class="service-card-bottom">
+              <div class="service-price">$25<small>Custom Detail</small></div>
+            </div>
+            <div class="service-icon"><img src="assets/images/Womens+design.png" alt="Women's cut and design icon"></div>
+          </div>
+          <div class="service-card service-bookable" role="button" tabindex="0" data-service="Kids Cut" aria-label="Book Kids Cut">
+            <h3>Kids Cut</h3>
+            <div class="service-card-bottom">
+              <div class="service-price">$15<small>Age 12 &amp; Under</small></div>
+            </div>
+            <div class="service-icon"><img src="assets/images/kidscut.png" alt="Kids cut icon"></div>
+          </div>
+          <div class="service-card service-bookable" role="button" tabindex="0" data-service="Teen Cut" aria-label="Book Teen Cut">
+            <h3>Teen Cut</h3>
+            <div class="service-card-bottom">
+              <div class="service-price">$20<small>Ages 13–18</small></div>
+            </div>
+            <div class="service-icon"><img src="assets/images/teencut.png" alt="Teen cut icon"></div>
+          </div>
         </div>
-        <div class="service-card fade-in">
-          <div class="service-icon">💇</div>
-          <h3>Women's Haircut</h3>
-          <p>Clean, styled women's cut by skilled hands. Confidence starts with a great cut.</p>
-          <div class="service-price">$20</div>
-        </div>
-        <div class="service-card fade-in">
-          <div class="service-icon">✨</div>
-          <h3>Women's Cut + Design</h3>
-          <p>Women's cut with custom design work — style meets artistry.</p>
-          <div class="service-price">$25</div>
-        </div>
-        <div class="service-card fade-in">
-          <div class="service-icon">👦</div>
-          <h3>Kids Cut</h3>
-          <p>For the little ones 12 &amp; under. Patient, friendly, and fun. Fresh cuts the whole family can trust.</p>
-          <div class="service-price">$15</div>
-        </div>
-        <div class="service-card fade-in">
-          <div class="service-icon">🧑</div>
-          <h3>Teen Cut</h3>
-          <p>For teens ages 13–18. Sharp styles for every vibe.</p>
-          <div class="service-price">$20</div>
-        </div>
-      </div>
 
-      <!-- Enhancements + Policies -->
-      <div class="policies-banner fade-in" style="margin-top:40px;">
-        <div class="policy-item">
-          <div class="dot"></div>
-          <span>✨ Enhancements add-on: <strong style="color:var(--gold)">$5</strong></span>
-        </div>
-        <div class="policy-item">
-          <div class="dot"></div>
-          <span>Appointments recommended</span>
-        </div>
-        <div class="policy-item">
-          <div class="dot"></div>
-          <span>Walk-ins welcome</span>
-        </div>
-        <div class="policy-item">
-          <div class="dot"></div>
-          <span>Hot Seat Option skips walk-ins, not appointments</span>
-        </div>
-        <div class="policy-item">
-          <div class="dot"></div>
-          <span>After-hours fee: <strong style="color:var(--gold)">+$10</strong></span>
+        <div class="policies-banner">
+          <div class="policy-item">
+            <div class="dot"></div>
+            <span>Enhancements add-on: <strong style="color:#ead7ab">$5</strong></span>
+          </div>
+          <div class="policy-item">
+            <div class="dot"></div>
+            <span>Appointments recommended</span>
+          </div>
+          <div class="policy-item">
+            <div class="dot"></div>
+            <span>Walk-ins welcome</span>
+          </div>
+          <div class="policy-item">
+            <div class="dot"></div>
+            <span>Hot Seat skips walk-ins, not appointments</span>
+          </div>
+          <div class="policy-item">
+            <div class="dot"></div>
+            <span>After-hours fee: <strong style="color:#ead7ab">+$10</strong></span>
+          </div>
         </div>
       </div>
     </div>
   </section>
+
+  <div class="booking-modal" id="booking-modal" aria-hidden="true">
+    <div class="booking-modal-backdrop" data-close-booking-modal="true"></div>
+    <div class="booking-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title">
+      <div class="booking-modal-header">
+        <div>
+          <h3 class="booking-modal-title" id="booking-modal-title">Book Appointment</h3>
+          <p class="booking-modal-subtitle" id="booking-modal-subtitle">Complete your request without leaving this page.</p>
+        </div>
+        <button type="button" class="booking-modal-close" id="booking-modal-close" aria-label="Close booking dialog">&times;</button>
+      </div>
+      <iframe class="booking-modal-frame" id="booking-modal-frame" title="Book an appointment"></iframe>
+    </div>
+  </div>
 
   <!-- ── About ── -->
   <section class="about" id="about">
@@ -514,27 +870,32 @@
         </div>
       </div>
       <div class="gallery-grid">
-        <!-- Using flyer crops as gallery placeholders until real gallery photos are added -->
         <div class="gallery-item fade-in">
-          <img src="flyer.jpg" alt="Fresh Fade" style="object-position: 15% 10%; object-fit:cover;">
+          <img src="assets/images/471604052_122158693358349724_5251298853520763331_n.jpg" alt="Prodigious Cuts gallery photo 1">
         </div>
         <div class="gallery-item fade-in">
-          <img src="flyer.jpg" alt="Word Design" style="object-position: 85% 10%; object-fit:cover;">
+          <img src="assets/images/471649964_122158692512349724_5838223654919580348_n.jpg" alt="Prodigious Cuts gallery photo 2">
         </div>
         <div class="gallery-item fade-in">
-          <img src="flyer.jpg" alt="Beardwork" style="object-position: 15% 60%; object-fit:cover;">
+          <img src="assets/images/471653411_122158692506349724_7592691371691521285_n.jpg" alt="Prodigious Cuts gallery photo 3">
         </div>
         <div class="gallery-item fade-in">
-          <img src="flyer.jpg" alt="Kids Cut" style="object-position: 85% 60%; object-fit:cover;">
+          <img src="assets/images/IMG_1268.png" alt="Prodigious Cuts gallery photo 4">
         </div>
         <div class="gallery-item fade-in">
-          <img src="barber.jpg" alt="Head Barber" style="object-position: center top; object-fit:cover;">
+          <img src="assets/images/IMG_1269.png" alt="Prodigious Cuts gallery photo 5">
         </div>
-        <div class="gallery-item fade-in"><div class="gallery-placeholder">✂️</div></div>
-        <div class="gallery-item fade-in"><div class="gallery-placeholder">💈</div></div>
-        <div class="gallery-item fade-in"><div class="gallery-placeholder">✂️</div></div>
+        <div class="gallery-item fade-in">
+          <img src="assets/images/IMG_1270.png" alt="Prodigious Cuts gallery photo 6">
+        </div>
+        <div class="gallery-item fade-in">
+          <img src="assets/images/IMG_1271.png" alt="Prodigious Cuts gallery photo 7">
+        </div>
+        <div class="gallery-item fade-in">
+          <img src="assets/images/IMG_1272.png" alt="Prodigious Cuts gallery photo 8">
+        </div>
       </div>
-      <p style="text-align:center;color:var(--gray);font-size:13px;margin-top:20px;">More photos coming soon — add your own Instagram gallery images here!</p>
+      <p style="text-align:center;color:var(--gray);font-size:13px;margin-top:20px;">Latest cuts from the shop floor.</p>
     </div>
   </section>
 
@@ -592,7 +953,7 @@
         <h2 class="section-title">Book Your Next Cut</h2>
         <p class="section-subtitle">Walk-ins are always welcome, but appointments guarantee your spot. Give us a call to lock in your time.</p>
         <div class="booking-buttons">
-          <a href="tel:+12053019662" class="btn btn-primary">📞 (205) 301-9662</a>
+          <a href="book.html" class="btn btn-primary">📞 Book Appointment</a>
           <a href="#contact" class="btn btn-outline">Send a Message</a>
         </div>
       </div>
@@ -686,7 +1047,7 @@
   <!-- ── Footer ── -->
   <footer class="site-footer">
     <div class="container">
-      <div class="footer-logo"><img src="logo.jpg" alt="Prodigious Cuts" style="height:50px;border-radius:8px;object-fit:contain;"></div>
+      <div class="footer-logo"><img src="logo.png" alt="Prodigious Cuts" style="height:50px;border-radius:8px;object-fit:contain;"></div>
       <p>12 N Washington St, Livingston, AL 35470 &nbsp;·&nbsp; (205) 301-9662</p>
       <p style="margin-top:6px;">&copy; 2026 Prodigious Cuts Barbershop. All rights reserved.</p>
       <div class="footer-socials">
@@ -698,6 +1059,57 @@
   </footer>
 
   <script>
+    var desktopAuthLoggedOut = document.getElementById('auth-links-logged-out');
+    var desktopAuthLoggedIn = document.getElementById('auth-links-logged-in');
+    var mobileAuthLoggedOut = document.getElementById('mobile-auth-logged-out');
+    var mobileAuthLoggedIn = document.getElementById('mobile-auth-logged-in');
+    var logoutBtn = document.getElementById('logout-btn');
+
+    function getStoredUser() {
+      try {
+        return JSON.parse(localStorage.getItem('pc_user') || 'null');
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function hasSession() {
+      return Boolean(localStorage.getItem('pc_token') && getStoredUser());
+    }
+
+    function applyNavAuthState() {
+      var loggedIn = hasSession();
+      if (desktopAuthLoggedOut) {
+        desktopAuthLoggedOut.style.display = loggedIn ? 'none' : 'flex';
+      }
+      if (desktopAuthLoggedIn) {
+        desktopAuthLoggedIn.style.display = loggedIn ? 'flex' : 'none';
+      }
+      if (mobileAuthLoggedOut) {
+        mobileAuthLoggedOut.style.display = loggedIn ? 'none' : 'flex';
+      }
+      if (mobileAuthLoggedIn) {
+        mobileAuthLoggedIn.style.display = loggedIn ? 'flex' : 'none';
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('pc_token');
+      localStorage.removeItem('pc_user');
+      applyNavAuthState();
+      closeMobileNav();
+      closeBookingModal();
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', handleLogout);
+    }
+    window.addEventListener('storage', function(event) {
+      if (event.key === 'pc_token' || event.key === 'pc_user') {
+        applyNavAuthState();
+      }
+    });
+
     var mobileNav = document.getElementById('mobile-nav');
     document.getElementById('menu-toggle').addEventListener('click', function() { mobileNav.classList.add('open'); });
     document.getElementById('mobile-nav-close').addEventListener('click', closeMobileNav);
@@ -713,6 +1125,82 @@
       });
     }, { threshold: 0.12 });
     fadeEls.forEach(function(el) { observer.observe(el); });
+
+    var bookingModal = document.getElementById('booking-modal');
+    var bookingModalFrame = document.getElementById('booking-modal-frame');
+    var bookingModalClose = document.getElementById('booking-modal-close');
+    var bookingModalSubtitle = document.getElementById('booking-modal-subtitle');
+    var serviceCards = document.querySelectorAll('.service-bookable');
+
+    function openBookingModal(serviceName) {
+      var query = 'modal=1';
+      if (serviceName) {
+        query += '&service=' + encodeURIComponent(serviceName);
+      }
+      bookingModalFrame.src = 'book.html?' + query;
+      bookingModal.classList.add('open');
+      bookingModal.setAttribute('aria-hidden', 'false');
+      bookingModalSubtitle.textContent = serviceName
+        ? 'Booking for ' + serviceName + '. Complete your request without leaving this page.'
+        : 'Complete your request without leaving this page.';
+      document.body.classList.add('modal-open');
+    }
+
+    function closeBookingModal() {
+      bookingModal.classList.remove('open');
+      bookingModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      window.setTimeout(function() { bookingModalFrame.src = ''; }, 120);
+    }
+
+    function userIsLoggedIn() {
+      return hasSession();
+    }
+
+    function redirectToAuthForBooking(serviceName) {
+      var redirectTarget = 'book.html';
+      if (serviceName) {
+        redirectTarget += '?service=' + encodeURIComponent(serviceName);
+      }
+      sessionStorage.setItem('pc_redirect', redirectTarget);
+      window.location.href = 'login.html#register';
+    }
+
+    serviceCards.forEach(function(card) {
+      var serviceName = card.getAttribute('data-service');
+      card.addEventListener('click', function() {
+        if (userIsLoggedIn()) {
+          openBookingModal(serviceName);
+        } else {
+          redirectToAuthForBooking(serviceName);
+        }
+      });
+      card.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          if (userIsLoggedIn()) {
+            openBookingModal(serviceName);
+          } else {
+            redirectToAuthForBooking(serviceName);
+          }
+        }
+      });
+    });
+
+    bookingModalClose.addEventListener('click', closeBookingModal);
+    bookingModal.addEventListener('click', function(event) {
+      if (event.target && event.target.getAttribute('data-close-booking-modal') === 'true') {
+        closeBookingModal();
+      }
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && bookingModal.classList.contains('open')) {
+        closeBookingModal();
+      }
+    });
+
+    applyNavAuthState();
+
   </script>
 </body>
 </html>

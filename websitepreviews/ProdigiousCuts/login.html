@@ -6,6 +6,14 @@
   <title>Login — Prodigious Cuts</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: 'ZADOBESY Regular';
+      src: url('ZADOBESY-Regular.ttf') format('truetype');
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+
     :root { --gold:#C8A96E; --gold-light:#E2CA9E; --dark:#0D0D0D; --dark-2:#1A1A1A; --dark-3:#252525; --white:#FAFAFA; --gray:#999; --radius:12px; }
     *{margin:0;padding:0;box-sizing:border-box;}
     body{font-family:'Inter',sans-serif;background:var(--dark);color:var(--white);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
@@ -53,7 +61,7 @@
 </head>
 <body>
   <div class="logo-wrap">
-    <a href="index.html"><img src="logo.jpg" alt="Prodigious Cuts"></a>
+    <a href="index.html"><img src="logo.png" alt="Prodigious Cuts"></a>
   </div>
 
   <div class="card">
@@ -114,6 +122,22 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    function getStoredUser() {
+      try {
+        return JSON.parse(localStorage.getItem('pc_user') || 'null');
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function alreadyLoggedIn() {
+      return Boolean(localStorage.getItem('pc_token') && getStoredUser());
+    }
+
+    if (alreadyLoggedIn()) {
+      window.location = sessionStorage.getItem('pc_redirect') || 'account.html';
+    }
+
     // Switch to register tab if hash is #register
     if (window.location.hash === '#register') switchTab('register');
 
@@ -135,6 +159,12 @@
       b.textContent = loading ? 'Please wait...' : (btnId==='login-btn' ? 'Log In' : 'Create Account');
     }
 
+    function consumeRedirectTarget(fallbackTarget) {
+      const target = sessionStorage.getItem('pc_redirect') || fallbackTarget;
+      sessionStorage.removeItem('pc_redirect');
+      return target;
+    }
+
     async function doLogin(e) {
       e.preventDefault();
       setLoading('login-btn', true);
@@ -148,7 +178,7 @@
         localStorage.setItem('pc_token', data.token);
         localStorage.setItem('pc_user', JSON.stringify(data.user));
         showToast('Logged in! Redirecting...', 'success');
-        setTimeout(() => { window.location = sessionStorage.getItem('pc_redirect') || 'account.html'; }, 900);
+        setTimeout(() => { window.location = consumeRedirectTarget('account.html'); }, 900);
       } catch(err) { showToast(err.message, 'error'); }
       finally { setLoading('login-btn', false); }
     }
@@ -158,23 +188,33 @@
       if (document.getElementById('r-pass').value !== document.getElementById('r-pass2').value) {
         return showToast('Passwords do not match', 'error');
       }
+      const email = document.getElementById('r-email').value;
+      const password = document.getElementById('r-pass').value;
       setLoading('register-btn', true);
       try {
         const res = await fetch('/api/register', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             name: document.getElementById('r-name').value,
-            email: document.getElementById('r-email').value,
+            email,
             phone: document.getElementById('r-phone').value,
-            password: document.getElementById('r-pass').value
+            password
           })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Registration failed');
-        localStorage.setItem('pc_token', data.token);
-        localStorage.setItem('pc_user', JSON.stringify(data.user));
+
+        const loginRes = await fetch('/api/login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email, password })
+        });
+        const loginData = await loginRes.json();
+        if (!loginRes.ok) throw new Error(loginData.error || 'Login failed after registration');
+
+        localStorage.setItem('pc_token', loginData.token);
+        localStorage.setItem('pc_user', JSON.stringify(loginData.user));
         showToast('Account created! Redirecting...', 'success');
-        setTimeout(() => { window.location = 'book.html'; }, 900);
+        setTimeout(() => { window.location = consumeRedirectTarget('book.html'); }, 900);
       } catch(err) { showToast(err.message, 'error'); }
       finally { setLoading('register-btn', false); }
     }
