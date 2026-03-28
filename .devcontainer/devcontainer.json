@@ -1,0 +1,13 @@
+{
+  "name": "OurPage",
+  "image": "mcr.microsoft.com/devcontainers/python:3",
+  "forwardPorts": [8080],
+  "postCreateCommand": "pip install -r requirements.txt",
+  "postStartCommand": "nohup bash -c 'PORT=8080 python audit_server.py > /tmp/server.log 2>&1' &",
+  "portsAttributes": {
+    "8080": {
+      "label": "Flask Server",
+      "onAutoForward": "notify"
+    }
+  }
+}
